@@ -13,6 +13,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.sharity.ui.theme.SharityTheme
 
+
+import com.example.sharity.ui.feature.ProfileScreen
+
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -20,8 +24,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             SharityTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
+                    ProfileScreen(
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
