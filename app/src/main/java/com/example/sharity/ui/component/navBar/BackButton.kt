@@ -1,5 +1,4 @@
-package com.example.sharity.ui.component
-
+package com.example.sharity.ui.component.navBar
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -11,13 +10,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.sharity.ui.theme.DarkBlackberry
 import com.example.sharity.ui.theme.DustyPurple
 
 @Composable
 fun BackButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    backgroundColor: Color = DustyPurple,
+    backgroundColor: Color = DarkBlackberry,
     iconColor: Color = Color.Black
 ) {
     Surface(
@@ -30,9 +30,7 @@ fun BackButton(
             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
             contentDescription = "Back",
             tint = iconColor,
-            modifier = Modifier
-                .size(24.dp)
-                .then(Modifier)
+            modifier = Modifier.size(24.dp)
         )
     }
 }
