@@ -2,10 +2,12 @@ package com.example.sharity.data.device
 
 import android.content.ContentUris
 import android.content.Context
+import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
 import com.example.sharity.data.local.AppDatabase
 import com.example.sharity.data.local.Track
+import java.io.FileNotFoundException
 
 class MP3Indexer(
     val context: Context,
@@ -63,7 +65,7 @@ class MP3Indexer(
                 Log.i("INFO", "")
 
                 val track = Track(
-                    contentUri = title.toString(),
+                    contentUri = uri.toString(),
                     duration = duration,
                     title = title,
                     artist = artist,
@@ -79,6 +81,24 @@ class MP3Indexer(
      * Searches the database index and checks if the music tracks are still there or have been deleted.
      */
     private fun indexDB() {
+        val trackDao = db.trackDao();
+        val tracks = trackDao.getAll();
 
+        tracks.forEach { track ->
+            try {
+                val stream = context.contentResolver.openInputStream(
+                    Uri.parse(track.contentUri)
+                )
+                if (stream == null) {
+                    return
+                }
+
+                stream.close()
+            } catch (e: FileNotFoundException) {
+                // File does not exist, remove from index
+                Log.i("INFO", "Delete ${track.contentUri}")
+                trackDao.delete(track)
+            }
+        }
     }
 }
