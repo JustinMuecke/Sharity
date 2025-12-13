@@ -5,12 +5,10 @@ import androidx.room.Room
 
 object Database {
     fun createDatabaseConnector(applicationContext: Context): AppDatabase {
-        val db = Room.databaseBuilder(
+        return Room.databaseBuilder(
             applicationContext,
             AppDatabase::class.java,
             "sharity-database"
-        ).build()
-
-        return db
+        ).fallbackToDestructiveMigration(true).build()
     }
 }

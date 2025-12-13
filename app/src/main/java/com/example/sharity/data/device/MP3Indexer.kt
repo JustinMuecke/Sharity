@@ -1,15 +1,12 @@
 package com.example.sharity.data.device
 
 import android.content.ContentUris
-import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
-import androidx.compose.material3.MediumTopAppBar
 import com.example.sharity.data.local.AppDatabase
-import com.example.sharity.data.local.Track
-import java.io.EOFException
+import com.example.sharity.domain.model.Track
 import java.io.FileNotFoundException
 
 class MP3Indexer(
@@ -17,6 +14,7 @@ class MP3Indexer(
     val db: AppDatabase,
     val uri: Uri,
 ) {
+
     fun index() {
         indexFiles()
         indexDB()
@@ -74,7 +72,7 @@ class MP3Indexer(
                     releaseYear = year,
                 )
 
-                tracks.InsertAll(track)
+                tracks.insertAll(track)
             }
         }
     }
