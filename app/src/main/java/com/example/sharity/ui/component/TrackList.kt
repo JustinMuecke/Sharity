@@ -19,12 +19,15 @@ fun TrackList(viewModel : HomeScreenViewModel, modifier : Modifier){
         modifier = modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ){
-        items(trackList) { trackName ->
+        items(trackList) { track ->
             TrackCard(
-                title = trackName.title,
-                artist = trackName.artist?: "",
-                isSelected = (trackName.title == selectedTrack),
-                onClick = { viewModel.selectTrack(trackName.title) }
+                uri = track.contentUri,
+                title = track.title,
+                artist = track.artist?: "",
+                isSelected = (track.title == selectedTrack),
+                onClick = {
+                    viewModel.selectTrack(track)
+                }
             )
         }
     }
