@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import com.example.sharity.ui.component.BackButton
 
 
 // reference to own files
@@ -62,9 +63,12 @@ enum class ProfileImageOption(@DrawableRes val resId: Int) {
     POP(R.drawable.singerin),
     JAZZ(R.drawable.vinyl)
 }
+
+
 @Composable
 fun ProfileScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onBackClick: () -> Unit
 ) {
     val bioState = remember { mutableStateOf("Tell us about your music taste, last concert, etc.") }
     val stats = UserStats(songs = 42, sent = 10, received = 5)
@@ -86,12 +90,24 @@ fun ProfileScreen(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                BackButton(
+                    onClick = onBackClick,
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .align(Alignment.TopStart as Alignment.Vertical)
+                )
+            }
             ProfileHeader(
                 nameState = userNameState,
                 isEditing = isEditingName.value,

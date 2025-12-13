@@ -62,9 +62,9 @@ class MainActivity : ComponentActivity() {
                         }
 
                         RootScreen.PROFILE -> {
-                            // profile.kt is in package com.example.sharity, so no import needed
                             ProfileScreen(
-                                modifier = Modifier.padding(innerPadding)
+                                modifier = Modifier.padding(innerPadding),
+                                onBackClick = { currentScreen = RootScreen.HOME }
                             )
                         }
                     }
