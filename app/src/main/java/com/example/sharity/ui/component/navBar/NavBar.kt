@@ -14,7 +14,7 @@ fun NavBar(
     onBackClick: () -> Unit,
     onNfcClick: () -> Unit,
     onProfileClick: () -> Unit,
-    modifier: Unit = Modifier
+    modifier: Modifier = Modifier
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),

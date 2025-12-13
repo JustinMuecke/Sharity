@@ -1,5 +1,6 @@
 package com.example.sharity.ui.feature.homescreen
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -8,9 +9,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.example.sharity.ui.component.AudioControl
-import com.example.sharity.ui.component.HomeTopBar
 import com.example.sharity.ui.component.SearchBar
-import com.example.sharity.ui.component.TagSelection
 import com.example.sharity.ui.component.TrackList
 
 import androidx.compose.runtime.mutableStateOf
@@ -21,6 +20,8 @@ import com.example.sharity.ui.component.navBar.NavBar
 import com.example.sharity.ui.component.share.PeerMiniProfileOverlay
 import com.example.sharity.ui.component.share.PeerSummary
 
+
+
 @Composable
 fun HomeScreen(
     viewModel: HomeScreenViewModel,
@@ -30,7 +31,6 @@ fun HomeScreen(
 ) {
     val showPeerOverlay = remember { mutableStateOf(false) }
 
-    // demo peer; later from NFC/Bluetooth discovery
     val peer = remember {
         PeerSummary(
             displayName = "Nearby User",
@@ -39,16 +39,13 @@ fun HomeScreen(
             received = 9
         )
     }
+
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
+        Box(modifier = Modifier.fillMaxSize()) {
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 72.dp)
-        ) {
             NavBar(
                 showBack = false,
                 onBackClick = {},
@@ -57,17 +54,23 @@ fun HomeScreen(
                 modifier = Modifier.align(Alignment.TopCenter)
             )
 
-            SearchBar(viewModel)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 72.dp)
+            ) {
+                SearchBar(viewModel)
 
-            TrackList(
-                viewModel = viewModel,
-                modifier = Modifier.weight(1f)
-            )
-            AudioControl(viewModel)
-        }
+                TrackList(
+                    viewModel = viewModel,
+                    modifier = Modifier.weight(1f)
+                )
 
-        if (showPeerOverlay.value) {
+                AudioControl(viewModel)
+            }
+
             PeerMiniProfileOverlay(
+                visible = showPeerOverlay.value,
                 peer = peer,
                 onDismiss = { showPeerOverlay.value = false },
                 onOpenPeer = {
@@ -76,24 +79,5 @@ fun HomeScreen(
                 }
             )
         }
-        HomeTopBar(onProfileClick = onProfileClick)
-        TrackList(
-            viewModel = viewModel,
-            modifier = Modifier.weight(1f)
-        )
-        AudioControl(viewModel)
-
-
     }
-
-
 }
-
-//fun Modifier.Companion.align(topCenter: Alignment) {}
-
-//fun Modifier.Companion.weight(f: Float): Modifier {
-//    return TODO("Provide the return value")
-//}
-
-
-
