@@ -1,4 +1,4 @@
-package com.example.sharity.data.local
+package com.example.sharity.domain.usecase
 
 import androidx.room.Dao
 import androidx.room.Delete
@@ -6,18 +6,18 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-
+import com.example.sharity.domain.model.User
 @Dao
-interface TrackDao {
+interface UserDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun InsertAll(vararg track: Track)
+    fun insertAll(vararg user: User)
 
     @Delete
-    fun delete(track: Track)
+    fun delete(user: User)
 
     @Update
-    fun update(track: Track)
+    fun update(user: User)
 
-    @Query("SELECT * FROM track")
-    fun getAll() : List<Track>
+    @Query("SELECT * FROM users")
+    fun getAll() : List<User>
 }

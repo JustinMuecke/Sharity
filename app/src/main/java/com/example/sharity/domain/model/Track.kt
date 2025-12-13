@@ -1,12 +1,12 @@
-package com.example.sharity.data.local
+package com.example.sharity.domain.model
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-@Entity
+@Entity(tableName = "tracks")
 data class Track(
-    @PrimaryKey val uuid: Int,
+    @PrimaryKey val trackID: Int,
     @ColumnInfo(name = "title") val title: String,
     @ColumnInfo(name = "artist") val artist: String?,
     @ColumnInfo(name = "album") val album: String?,
