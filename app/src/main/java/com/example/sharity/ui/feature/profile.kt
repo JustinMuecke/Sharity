@@ -1,25 +1,25 @@
 package com.example.sharity.ui.feature
 
-
-import com.example.sharity.R
-
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
-import androidx.compose.ui.res.painterResource
-import androidx.compose.material3.AlertDialog
-
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -27,26 +27,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import com.example.sharity.ui.component.BackButton
-
-
-// reference to own files
+import com.example.sharity.R
+import com.example.sharity.ui.component.navBar.NavBar
+import com.example.sharity.ui.component.share.PeerMiniProfileOverlay
+import com.example.sharity.ui.component.share.PeerSummary
+import com.example.sharity.ui.theme.AccentDeepIndigo
 import com.example.sharity.ui.theme.DarkBlackberry
 import com.example.sharity.ui.theme.DustyPurple
 import com.example.sharity.ui.theme.GrapeGlimmer
 import com.example.sharity.ui.theme.SheerLilac
-import com.example.sharity.ui.theme.AccentDeepIndigo
-
-
-
 
 data class UserStats(
     val songs: Int,
@@ -64,11 +57,11 @@ enum class ProfileImageOption(@DrawableRes val resId: Int) {
     JAZZ(R.drawable.vinyl)
 }
 
-
 @Composable
 fun ProfileScreen(
     modifier: Modifier = Modifier,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onOpenPeer: () -> Unit
 ) {
     val bioState = remember { mutableStateOf("Tell us about your music taste, last concert, etc.") }
     val stats = UserStats(songs = 42, sent = 10, received = 5)
@@ -86,70 +79,90 @@ fun ProfileScreen(
 
     val isEditingBio = remember { mutableStateOf(false) }
 
+    val showPeerOverlay = remember { mutableStateOf(false) }
+    val onShareClick = { showPeerOverlay.value = true }
+
+    val peer = remember {
+        PeerSummary(
+            displayName = "Nearby User",
+            songs = 128,
+            sent = 12,
+            received = 9
+        )
+    }
+
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
+        Box(modifier = Modifier.fillMaxSize()) {
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start
+            NavBar(
+                showBack = true,
+                onBackClick = onBackClick,
+                onNfcClick = { showPeerOverlay.value = true },
+                onProfileClick = { /* already on profile */ },
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp)
+                    .padding(top = 72.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                BackButton(
-                    onClick = onBackClick,
-                    // modifier = Modifier
-                    //    .padding(16.dp)
-                    //    .align(Alignment.TopStart as Alignment.Vertical)
+                ProfileHeader(
+                    nameState = userNameState,
+                    isEditing = isEditingName.value,
+                    onStartEdit = { isEditingName.value = true },
+                    onDone = { newName ->
+                        val sanitized = sanitizeDisplayName(newName)
+                        userNameState.value = sanitized
+                        isEditingName.value = false
+                    },
+                    onCancel = { isEditingName.value = false },
+                    profileImage = profileImageState.value,
+                    onAvatarClick = { isAvatarDialogOpen.value = true },
+                    onShareClick = onShareClick
+                )
+
+                StatsSection(stats = stats)
+
+                BioSection(
+                    bioState = bioState,
+                    isEditing = isEditingBio.value,
+                    onStartEdit = { isEditingBio.value = true },
+                    onDone = { newBio ->
+                        val sanitized = sanitizeBioText(newBio)
+                        bioState.value = sanitized
+                        isEditingBio.value = false
+                    },
+                    onCancel = { isEditingBio.value = false }
+                )
+
+                BadgesSection(badges = badges)
+            }
+
+            PeerMiniProfileOverlay(
+                visible = showPeerOverlay.value,
+                peer = peer,
+                onDismiss = { showPeerOverlay.value = false },
+                onOpenPeer = {
+                    showPeerOverlay.value = false
+                    onOpenPeer()
+                }
+            )
+
+            if (isAvatarDialogOpen.value) {
+                AvatarPickerDialog(
+                    current = profileImageState.value,
+                    onSelect = { selected ->
+                        profileImageState.value = selected
+                    },
+                    onDismiss = { isAvatarDialogOpen.value = false }
                 )
             }
-            ProfileHeader(
-                nameState = userNameState,
-                isEditing = isEditingName.value,
-                onStartEdit = { isEditingName.value = true },
-                onDone = { newName ->
-                    val sanitized = sanitizeDisplayName(newName)
-                    userNameState.value = sanitized
-                    isEditingName.value = false
-                    // later: save to DB
-                },
-                onCancel = { isEditingName.value = false },
-                profileImage = profileImageState.value,
-                onAvatarClick = { isAvatarDialogOpen.value = true }
-            )
-
-            StatsSection(stats = stats)
-
-            BioSection(
-                bioState = bioState,
-                isEditing = isEditingBio.value,
-                onStartEdit = { isEditingBio.value = true },
-                onDone = { newBio ->
-                    val sanitized = sanitizeBioText(newBio)
-                    bioState.value = sanitized
-                    isEditingBio.value = false
-                    // later: save to DB
-                },
-                onCancel = { isEditingBio.value = false }
-            )
-
-            BadgesSection(badges = badges)
-        }
-
-        if (isAvatarDialogOpen.value) {
-            AvatarPickerDialog(
-                current = profileImageState.value,
-                onSelect = { selected ->
-                    profileImageState.value = selected
-                    // later: save to DB
-                },
-                onDismiss = { isAvatarDialogOpen.value = false }
-            )
         }
     }
 }
@@ -163,6 +176,7 @@ fun ProfileHeader(
     onCancel: () -> Unit,
     profileImage: ProfileImageOption,
     onAvatarClick: () -> Unit,
+    onShareClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val tempName = remember(isEditing) { mutableStateOf(nameState.value) }
@@ -192,9 +206,7 @@ fun ProfileHeader(
 
                 Text(
                     text = "Edit name",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        color = GrapeGlimmer
-                    )
+                    style = MaterialTheme.typography.titleMedium.copy(color = GrapeGlimmer)
                 )
             }
 
@@ -220,9 +232,7 @@ fun ProfileHeader(
                 )
             }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 TextButton(
                     onClick = {
                         if (errorMessage.value == null) {
@@ -233,7 +243,7 @@ fun ProfileHeader(
                 ) {
                     Text("Done")
                 }
-                TextButton(onClick = { onCancel() }) {
+                TextButton(onClick = onCancel) {
                     Text("Cancel")
                 }
             }
@@ -276,6 +286,14 @@ fun ProfileHeader(
                 )
             }
 
+            IconButton(onClick = onShareClick) {
+                Icon(
+                    imageVector = Icons.Filled.Share,
+                    contentDescription = "Share",
+                    tint = GrapeGlimmer
+                )
+            }
+
             IconButton(onClick = onStartEdit) {
                 Icon(
                     imageVector = Icons.Filled.Edit,
@@ -286,8 +304,6 @@ fun ProfileHeader(
         }
     }
 }
-
-
 
 @Composable
 fun AvatarPickerDialog(
@@ -303,20 +319,14 @@ fun AvatarPickerDialog(
             TextButton(onClick = {
                 onSelect(tempSelection.value)
                 onDismiss()
-            }) {
-                Text("Done")
-            }
+            }) { Text("Done") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
+            TextButton(onClick = onDismiss) { Text("Cancel") }
         },
         title = { Text("Choose profile picture") },
         text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -365,8 +375,6 @@ fun AvatarPickerDialog(
     )
 }
 
-
-
 @Composable
 fun StatsSection(
     stats: UserStats,
@@ -376,23 +384,12 @@ fun StatsSection(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        StatCard(
-            title = "Songs",
-            value = stats.songs.toString(),
-            modifier = Modifier.weight(1f)
-        )
-        StatCard(
-            title = "Sent",
-            value = stats.sent.toString(),
-            modifier = Modifier.weight(1f)
-        )
-        StatCard(
-            title = "Received",
-            value = stats.received.toString(),
-            modifier = Modifier.weight(1f)
-        )
+        StatCard(title = "Songs", value = stats.songs.toString(), modifier = Modifier.weight(1f))
+        StatCard(title = "Sent", value = stats.sent.toString(), modifier = Modifier.weight(1f))
+        StatCard(title = "Received", value = stats.received.toString(), modifier = Modifier.weight(1f))
     }
 }
+
 @Composable
 fun StatCard(
     title: String,
@@ -400,23 +397,18 @@ fun StatCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier,  // no weight here
-        colors = CardDefaults.cardColors(
-            containerColor = DustyPurple
-        ),
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = DustyPurple),
         shape = RoundedCornerShape(14.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier
-                .padding(vertical = 12.dp, horizontal = 10.dp),
+            modifier = Modifier.padding(vertical = 12.dp, horizontal = 10.dp),
             horizontalAlignment = Alignment.Start
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.labelMedium.copy(
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
+                style = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.onPrimary)
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
@@ -442,18 +434,14 @@ fun BioSection(
     val tempBio = remember(isEditing) { mutableStateOf(bioState.value) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
 
-    Column(
-        modifier = modifier.fillMaxWidth()
-    ) {
+    Column(modifier = modifier.fillMaxWidth()) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
                 text = "About you",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                style = MaterialTheme.typography.titleMedium.copy(color = MaterialTheme.colorScheme.onSurface)
             )
 
             if (!isEditing) {
@@ -472,9 +460,7 @@ fun BioSection(
         if (isEditing) {
             Card(
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = DarkBlackberry
-                )
+                colors = CardDefaults.cardColors(containerColor = DarkBlackberry)
             ) {
                 Column(
                     modifier = Modifier
@@ -509,9 +495,7 @@ fun BioSection(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         TextButton(
                             onClick = {
                                 if (errorMessage.value == null) {
@@ -519,21 +503,16 @@ fun BioSection(
                                 }
                             },
                             enabled = errorMessage.value == null
-                        ) {
-                            Text("Done")
-                        }
-                        TextButton(onClick = { onCancel() }) {
-                            Text("Cancel")
-                        }
+                        ) { Text("Done") }
+
+                        TextButton(onClick = onCancel) { Text("Cancel") }
                     }
                 }
             }
         } else {
             Card(
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = DarkBlackberry
-                )
+                colors = CardDefaults.cardColors(containerColor = DarkBlackberry)
             ) {
                 Box(
                     modifier = Modifier
@@ -545,9 +524,7 @@ fun BioSection(
                     }
                     Text(
                         text = text,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface)
                     )
                 }
             }
@@ -560,20 +537,14 @@ fun BadgesSection(
     badges: List<Badge>,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier.fillMaxWidth()
-    ) {
+    Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = "Badges",
-            style = MaterialTheme.typography.titleMedium.copy(
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            style = MaterialTheme.typography.titleMedium.copy(color = MaterialTheme.colorScheme.onSurface)
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             badges.forEach { badge ->
                 BadgeChip(label = badge.label)
             }
@@ -588,10 +559,7 @@ fun BadgeChip(
 ) {
     Box(
         modifier = modifier
-            .background(
-                color = AccentDeepIndigo,
-                shape = RoundedCornerShape(50)
-            )
+            .background(color = AccentDeepIndigo, shape = RoundedCornerShape(50))
             .padding(horizontal = 10.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -605,15 +573,10 @@ fun BadgeChip(
     }
 }
 
-
-//TODO
-// Basic display name sanitizing before persisting
 fun sanitizeDisplayName(raw: String): String {
     return raw.trim().replace(Regex("[\"'`;\\\\]"), "")
 }
 
-//TODO
-// Returns error message or null if valid
 fun validateDisplayName(input: String): String? {
     val trimmed = input.trim()
     if (trimmed.isEmpty()) return "Name cannot be empty"
@@ -623,7 +586,6 @@ fun validateDisplayName(input: String): String? {
     }
     return null
 }
-
 
 fun sanitizeBioText(raw: String): String {
     return raw.trim().replace(Regex("[\"'`;\\\\]"), "")
