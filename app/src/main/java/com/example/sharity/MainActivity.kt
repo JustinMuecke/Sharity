@@ -1,6 +1,8 @@
 package com.example.sharity
 
 import android.os.Bundle
+import android.provider.MediaStore
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -17,8 +19,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.media3.exoplayer.ExoPlayer
 import com.example.sharity.data.device.MP3Indexer
 import com.example.sharity.data.local.Database
-import com.example.sharity.data.local.Track
-import com.example.sharity.data.local.TrackDao
 import com.example.sharity.ui.theme.SharityTheme
 import com.example.sharity.ui.feature.homescreen.HomeScreen
 import com.example.sharity.ui.feature.homescreen.HomeScreenViewModel
@@ -29,8 +29,15 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val db = Database.createDatabaseConnector(this.applicationContext)
         val exoPlayer = ExoPlayer.Builder(applicationContext).build()
+
         Thread({
-            MP3Indexer(applicationContext, db).index()
+            try {
+                val indexer = MP3Indexer(applicationContext, db, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
+                indexer.index()
+            } catch (e: Exception) {
+                // TODO: Handle error!
+                Log.e("ERROR", "", e)
+            }
         }).start()
 
         setContent {

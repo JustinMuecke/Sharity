@@ -1,19 +1,22 @@
 package com.example.sharity.data.device
 
 import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
+import androidx.compose.material3.MediumTopAppBar
 import com.example.sharity.data.local.AppDatabase
 import com.example.sharity.data.local.Track
+import java.io.EOFException
 import java.io.FileNotFoundException
 
 class MP3Indexer(
     val context: Context,
     val db: AppDatabase,
+    val uri: Uri,
 ) {
-
     fun index() {
         indexFiles()
         indexDB()
@@ -23,9 +26,8 @@ class MP3Indexer(
      * Searches the shared storage for music files and inserts them into the database index and updated them accordingly.
      */
     private fun indexFiles() {
-        val location = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         val query = context.contentResolver.query(
-            location,
+            uri,
             arrayOf(
                 MediaStore.Audio.Media._ID,
                 MediaStore.Audio.Media.DURATION,
@@ -49,7 +51,7 @@ class MP3Indexer(
 
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
-                val uri = ContentUris.withAppendedId(location, id)
+                val uri = ContentUris.withAppendedId(uri, id)
 
                 val duration = cursor.getLong(durationColumn)
                 val title = cursor.getString(titleColumn)
