@@ -1,18 +1,23 @@
 package com.example.sharity.data.device
 
-import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
-import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
-import java.util.concurrent.TimeUnit
 
 class MP3Indexer(
     val context: Context,
 ) {
 
     fun index() {
+        indexFiles()
+        indexDB()
+    }
+
+    /**
+     * Searches the shared storage for music files and inserts them into the database index and updated them accordingly.
+     */
+    private fun indexFiles() {
         val location = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         val query = context.contentResolver.query(
             location,
@@ -51,7 +56,19 @@ class MP3Indexer(
                 Log.i("INFO", "Artist: $artist")
                 Log.i("INFO", "Year: $year")
                 Log.i("INFO", "")
+
+                /*
+                If in DB, update
+                If not in DB, insert
+                 */
             }
         }
+    }
+
+    /**
+     * Searches the database index and checks if the music tracks are still there or have been deleted.
+     */
+    private fun indexDB() {
+
     }
 }
