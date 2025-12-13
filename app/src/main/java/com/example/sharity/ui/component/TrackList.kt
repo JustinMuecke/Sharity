@@ -15,15 +15,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.sharity.ui.feature.homescreen.HomeScreenViewModel
+import com.example.sharity.ui.feature.playlistscreen.PlaylistViewModel
 
 @Composable
-fun TrackList(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier){
+fun TrackList(viewModel: PlaylistViewModel, modifier: Modifier = Modifier){
 
-    // Collect the FILTERED list from the ViewModel
     val trackList by viewModel.filteredTracks.collectAsState()
-
-    // Collect the selected track (this remains the same)
     val selectedTrack by viewModel.currentTrack.collectAsState()
     val currentListName by viewModel.currentListName.collectAsState()
     Column(
@@ -52,7 +49,7 @@ fun TrackList(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier){
                     uri = track.contentUri,
                     title = track.title,
                     artist = track.artist ?: "",
-                    isSelected = (track.title == selectedTrack),
+                    isSelected = (track.contentUri == selectedTrack),
                     onClick = {
                         viewModel.selectTrack(track)
                     }

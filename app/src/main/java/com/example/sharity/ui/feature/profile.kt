@@ -68,7 +68,6 @@ enum class ProfileImageOption(@DrawableRes val resId: Int) {
 @Composable
 fun ProfileScreen(
     modifier: Modifier = Modifier,
-    onBackClick: () -> Unit
 ) {
     val bioState = remember { mutableStateOf("Tell us about your music taste, last concert, etc.") }
     val stats = UserStats(songs = 42, sent = 10, received = 5)
@@ -91,17 +90,6 @@ fun ProfileScreen(
         color = MaterialTheme.colorScheme.background
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-
-            // Top Navigation Bar
-            NavBar(
-                showBack = true,
-                onBackClick = onBackClick,
-                onNfcClick = { /* TODO: NFC flow */ },
-                onProfileClick = { /* optional: noop (already on profile) */ },
-                modifier = Modifier.align(Alignment.TopCenter)
-            )
-
-            // Screen content below the NavBar
             Column(
                 modifier = Modifier
                     .fillMaxSize()
