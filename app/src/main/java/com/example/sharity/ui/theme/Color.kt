@@ -14,7 +14,7 @@ val AccentDeepIndigo = Color(0xFF5B557A)
 val AccentSoftGreyLilac = Color(0xFF767480)
 val AccentMutedPlum = Color(0xFF5A515D)
 
-val BackgroundDark = Color(0xFF1E1E1E)
+val BackgroundDark = Color(0xFF2a2a2a)
 val SurfaceDark    = Color(0xFF26242B)
 val SurfaceVariantDark = Color(0xFF312E38)
 
