@@ -26,11 +26,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.exoplayer.ExoPlayer
 import com.example.sharity.data.device.MP3Indexer
-import com.example.sharity.data.wrapper.Database
-import androidx.lifecycle.lifecycleScope
 import com.example.sharity.data.device.NfcClient
-import com.example.sharity.data.local.PrimaryUser
-import com.example.sharity.data.wrapper.Database
+import com.example.sharity.data.wrapper.db
+import com.example.sharity.data.wrapper.userRepo
 import com.example.sharity.data.wrapper.NfcController
 import com.example.sharity.ui.feature.ProfileScreen
 import com.example.sharity.ui.feature.homescreen.HomeScreen
@@ -55,15 +53,14 @@ class MainActivity : ComponentActivity() {
         nfcController = NfcController(this) { tag ->
             logNfcMessages(tag)
         }
-        val db = Database.createDatabaseConnector(this.applicationContext)
+        val userRepo = this.applicationContext.userRepo()
+        val db = this.applicationContext.db()
         val exoPlayer = ExoPlayer.Builder(applicationContext).build()
 
         Thread {
             try {
-                db.userInfoDao().createUuidIfEmpty(Uuid.random().toHexString())
-                PrimaryUser.init(db, "user1", "some_font")
-                val indexer =
-                    MP3Indexer(applicationContext, db, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
+                db.userInfoDao().createValueIfEmpty(Uuid.random().toHexString())
+
                 val indexer = MP3Indexer(
                     applicationContext,
                     db,
