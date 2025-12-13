@@ -15,10 +15,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.sharity.ui.feature.playlistscreen.PlaylistViewModel
+import com.example.sharity.ui.feature.allsongsscreen.AllSongsViewModel
 
 @Composable
-fun TrackList(viewModel: PlaylistViewModel, modifier: Modifier = Modifier){
+fun TrackList(viewModel: AllSongsViewModel, modifier: Modifier = Modifier){
 
     val trackList by viewModel.filteredTracks.collectAsState()
     val selectedTrack by viewModel.currentTrack.collectAsState()

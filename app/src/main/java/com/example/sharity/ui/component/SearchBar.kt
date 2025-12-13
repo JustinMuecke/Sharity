@@ -13,10 +13,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.sharity.ui.feature.playlistscreen.PlaylistViewModel
+import com.example.sharity.ui.feature.allsongsscreen.AllSongsViewModel
 
 @Composable
-fun SearchBar(viewModel : PlaylistViewModel){
+fun SearchBar(viewModel : AllSongsViewModel){
     // Collect the search query state from the ViewModel
     val currentQuery by viewModel.searchQuery.collectAsState()
 

@@ -50,14 +50,12 @@ import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.ui.graphics.Color
-import com.example.sharity.ui.feature.playlistscreen.PlaylistViewModel
-import com.example.sharity.ui.feature.playlistscreen.RepeatMode
-
-
+import com.example.sharity.ui.feature.allsongsscreen.AllSongsViewModel
+import com.example.sharity.ui.feature.allsongsscreen.RepeatMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AudioControl(viewModel : PlaylistViewModel){
+fun AudioControl(viewModel : AllSongsViewModel){
     val isPlaying by viewModel.isPlaying.collectAsState()
     val nextTracks by viewModel.nextTracks.collectAsState()
     val currentTrack by viewModel.currentTrack.collectAsState()
