@@ -1,8 +1,6 @@
 package com.example.sharity.ui.feature.homescreen
 
-import android.media.browse.MediaBrowser
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider.NewInstanceFactory.Companion.instance
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -11,7 +9,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.exoplayer.ExoPlayer
 import com.example.sharity.data.local.AppDatabase
-import com.example.sharity.data.local.TrackDao
+import com.example.sharity.domain.usecase.TrackDao
 import com.example.sharity.domain.model.Track
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay

@@ -28,7 +28,7 @@ class MainActivity : ComponentActivity() {
         val db = Database.createDatabaseConnector(this.applicationContext)
         val exoPlayer = ExoPlayer.Builder(applicationContext).build()
         Thread({
-            MP3Indexer(applicationContext, dbInstance).index()
+            MP3Indexer(applicationContext, db).index()
         }).start()
 
         setContent {
