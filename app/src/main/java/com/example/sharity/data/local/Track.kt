@@ -6,10 +6,9 @@ import androidx.room.PrimaryKey
 
 @Entity
 data class Track(
-    @PrimaryKey val uuid: Int,
+    @PrimaryKey @ColumnInfo(name = "content_uri") val contentUri: String,
     @ColumnInfo(name = "title") val title: String,
     @ColumnInfo(name = "artist") val artist: String?,
-    @ColumnInfo(name = "album") val album: String?,
     @ColumnInfo(name = "release_year") val releaseYear: Int?,
-    @ColumnInfo(name = "duration") val duration: Int?
+    @ColumnInfo(name = "duration") val duration: Long?
 )

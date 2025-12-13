@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.sharity.data.device.MP3Indexer
 import com.example.sharity.data.local.Database
 import com.example.sharity.data.local.Track
 import com.example.sharity.data.local.TrackDao
@@ -23,11 +24,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val instance = Database
-        val db: TrackDao = instance.createDatabaseConnector(this.applicationContext)
+        val db = Database.createDatabaseConnector(this.applicationContext)
 
         Thread({
-            db.InsertAll(Track(1, "b", "c", "d", 1, 1))
+            MP3Indexer(applicationContext, db).index()
         }).start()
 
         setContent {
