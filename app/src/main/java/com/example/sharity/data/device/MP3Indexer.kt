@@ -6,7 +6,7 @@ import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
 import com.example.sharity.data.local.AppDatabase
-import com.example.sharity.data.local.Track
+import com.example.sharity.domain.model.Track
 import java.io.FileNotFoundException
 
 class MP3Indexer(
@@ -72,7 +72,7 @@ class MP3Indexer(
                     releaseYear = year,
                 )
 
-                tracks.InsertAll(track)
+                tracks.insertAll(track)
             }
         }
     }

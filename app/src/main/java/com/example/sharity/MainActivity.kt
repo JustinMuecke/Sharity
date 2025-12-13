@@ -14,8 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.sharity.data.device.MP3Indexer
 import com.example.sharity.data.local.Database
-import com.example.sharity.data.local.Track
-import com.example.sharity.data.local.TrackDao
 import com.example.sharity.ui.theme.SharityTheme
 import com.example.sharity.ui.feature.homescreen.HomeScreen
 import com.example.sharity.ui.feature.homescreen.HomeScreenViewModel
@@ -24,10 +22,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val db = Database.createDatabaseConnector(this.applicationContext)
+        val dbInstance = Database.createDatabaseConnector(this.applicationContext)
 
         Thread({
-            MP3Indexer(applicationContext, db).index()
+            MP3Indexer(applicationContext, dbInstance).index()
         }).start()
 
         setContent {
