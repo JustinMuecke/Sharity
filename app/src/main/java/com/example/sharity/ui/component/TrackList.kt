@@ -21,9 +21,10 @@ fun TrackList(viewModel : HomeScreenViewModel, modifier : Modifier){
     ){
         items(trackList) { trackName ->
             TrackCard(
-                title = trackName,
-                isSelected = (trackName == selectedTrack),
-                onClick = { viewModel.selectTrack(trackName) }
+                title = trackName.title,
+                artist = trackName.artist?: "",
+                isSelected = (trackName.title == selectedTrack),
+                onClick = { viewModel.selectTrack(trackName.title) }
             )
         }
     }
