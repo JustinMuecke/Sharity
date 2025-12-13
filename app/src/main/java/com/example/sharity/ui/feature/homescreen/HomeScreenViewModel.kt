@@ -15,6 +15,7 @@ class HomeScreenViewModel(private val trackDao: TrackDao) : ViewModel() {
 
     private val _tracks = MutableStateFlow<List<Track>>(emptyList())
 
+
     init {
         // 2. Trigger the load immediately when ViewModel starts
         loadTracks()
@@ -25,16 +26,11 @@ class HomeScreenViewModel(private val trackDao: TrackDao) : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
 
             // Now this is safe!
-            val trackObjects = trackDao.getAll()
+            val trackObjects = trackDao.getAllAsync()
             // Update State (StateFlow is thread-safe)
             _tracks.value = trackObjects
         }
     }
-
-    private val _names = MutableStateFlow(
-        listOf("Alice", "Bob", "Charlie", "David", "Eve", "Justin", "Peter", "Samuel", "Alex", "Fabi")
-    )
-    val tracks = _names.asStateFlow()
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying = _isPlaying.asStateFlow()
 
