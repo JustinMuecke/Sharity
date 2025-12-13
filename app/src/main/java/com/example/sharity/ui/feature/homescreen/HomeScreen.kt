@@ -26,9 +26,6 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             HomeTopBar(onProfileClick = onProfileClick)
-
-            TagSelection()
-            SearchBar(viewModel)
             TrackList(
                 viewModel = viewModel,
                 modifier = Modifier.weight(1f)
