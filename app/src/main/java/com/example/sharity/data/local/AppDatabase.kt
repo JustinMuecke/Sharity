@@ -6,7 +6,6 @@ import com.example.sharity.domain.model.Playlist
 import com.example.sharity.domain.model.Track
 import com.example.sharity.domain.model.TrackPlaylistJunction
 import com.example.sharity.domain.model.Connection
-import com.example.sharity.domain.model.NameStatsJunction
 import com.example.sharity.domain.model.UserInfo
 import com.example.sharity.domain.usecase.PlaylistDao
 import com.example.sharity.domain.usecase.TrackDao

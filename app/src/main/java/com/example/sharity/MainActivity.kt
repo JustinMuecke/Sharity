@@ -31,7 +31,6 @@ import com.example.sharity.ui.theme.SharityTheme
 import com.example.sharity.ui.feature.ProfileScreen
 import com.example.sharity.ui.feature.homescreen.HomeScreen
 import com.example.sharity.ui.feature.homescreen.HomeScreenViewModel
-import com.example.sharity.ui.theme.SharityTheme
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -46,24 +45,25 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val userInstance = PrimaryUser.init(this.contentResolver, "user1", "some_font")
+
         nfcController = NfcController(this) { tag ->
             logNfcMessages(tag)
         }
-
         val db = Database.createDatabaseConnector(this.applicationContext)
         val exoPlayer = ExoPlayer.Builder(applicationContext).build()
 
-        Thread({
+        Thread {
             try {
                 db.userInfoDao().createUuidIfEmpty(Uuid.random().toHexString())
-                val indexer = MP3Indexer(applicationContext, db, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
+                PrimaryUser.init(db, "user1", "some_font")
+                val indexer =
+                    MP3Indexer(applicationContext, db, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
                 indexer.index()
             } catch (e: Exception) {
                 // TODO: Handle error!
                 Log.e("ERROR", "", e)
             }
-        }).start()
+        }.start()
         setContent {
             SharityTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->

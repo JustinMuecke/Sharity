@@ -22,7 +22,7 @@ interface PlaylistDao {
     fun insertPlaylistTrackCrossRef(crossRef: TrackPlaylistJunction)
 
     @Transaction
-    open fun addTrackToPlaylist(playlist: Playlist, track: Track)
+    fun addTrackToPlaylist(playlist: Playlist, track: Track)
     {
         insertPlaylistTrackCrossRef(
             TrackPlaylistJunction(
