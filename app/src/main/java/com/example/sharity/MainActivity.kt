@@ -40,6 +40,12 @@ import kotlin.uuid.Uuid
 import com.example.sharity.ui.theme.SharityTheme
 import kotlinx.coroutines.launch
 
+
+import androidx.compose.runtime.collectAsState
+import com.example.sharity.ui.feature.peersongs.PeerSongsScreen
+import com.example.sharity.ui.feature.peersongs.PeerSongsViewModel
+
+
 enum class RootScreen { HOME, PROFILE, PEER_SONGS }
 
 // FIXME: Move to viewmodel, to prevent Memoryleak
@@ -110,15 +116,28 @@ class MainActivity : ComponentActivity() {
                         }
 
                         RootScreen.PEER_SONGS -> {
-                            // TODO: replace with PeerSongsScreen
-                            Surface(modifier = Modifier.fillMaxSize()) {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text("Peer Songs Screen (TODO)")
-                                }
-                            }
+                            val peerSongsViewModel = viewModel<PeerSongsViewModel>()
+                            val state = peerSongsViewModel.uiState.collectAsState().value
+
+                            PeerSongsScreen(
+                                peerName = state.peerName,
+                                tracks = state.tracks,
+                                selectedTrackUris = state.selectedTrackUris,
+                                onToggleSelect = { track -> peerSongsViewModel.toggleSelect(track) },
+                                onCancel = {
+                                    peerSongsViewModel.clearSelection()
+                                    currentScreen = RootScreen.HOME
+                                },
+                                onFinished = {
+                                    // TODO: next step = navigate to Trade/Confirm screen
+                                    // For now: keep it simple and go back home
+                                    val selected = peerSongsViewModel.getSelectedTracks()
+                                    // later: pass selected to next screen
+                                    peerSongsViewModel.clearSelection()
+                                    currentScreen = RootScreen.HOME
+                                },
+                                modifier = Modifier.padding(innerPadding)
+                            )
                         }
                     }
                 }
