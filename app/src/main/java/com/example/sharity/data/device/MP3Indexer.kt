@@ -4,9 +4,12 @@ import android.content.ContentUris
 import android.content.Context
 import android.provider.MediaStore
 import android.util.Log
+import com.example.sharity.data.local.AppDatabase
+import com.example.sharity.data.local.Track
 
 class MP3Indexer(
     val context: Context,
+    val db: AppDatabase,
 ) {
 
     fun index() {
@@ -33,6 +36,8 @@ class MP3Indexer(
             "",
         )
 
+        val tracks = db.trackDao()
+
         query?.use { cursor ->
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
             val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
@@ -57,10 +62,15 @@ class MP3Indexer(
                 Log.i("INFO", "Year: $year")
                 Log.i("INFO", "")
 
-                /*
-                If in DB, update
-                If not in DB, insert
-                 */
+                val track = Track(
+                    contentUri = title.toString(),
+                    duration = duration,
+                    title = title,
+                    artist = artist,
+                    releaseYear = year,
+                )
+
+                tracks.InsertAll(track)
             }
         }
     }
