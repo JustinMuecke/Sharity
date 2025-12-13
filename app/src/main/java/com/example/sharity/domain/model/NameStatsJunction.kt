@@ -1,3 +1,6 @@
 package com.example.sharity.domain.model
 
-data class name_stats_junction()
+data class NameStatsJunction(
+    val name: String,
+    val stats: Int
+)

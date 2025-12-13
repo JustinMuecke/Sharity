@@ -21,7 +21,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.exoplayer.ExoPlayer
 import com.example.sharity.data.device.MP3Indexer
-
 import com.example.sharity.data.wrapper.Database
 import androidx.lifecycle.lifecycleScope
 import com.example.sharity.data.device.NfcClient
@@ -33,13 +32,17 @@ import com.example.sharity.ui.feature.ProfileScreen
 import com.example.sharity.ui.feature.homescreen.HomeScreen
 import com.example.sharity.ui.feature.homescreen.HomeScreenViewModel
 import com.example.sharity.ui.theme.SharityTheme
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 enum class RootScreen { HOME, PROFILE }
 
+// FIXME: Move to viewmodel, to prevent Memoryleak
 private lateinit var nfcController: NfcController
 private val nfcClient = NfcClient()
 
 class MainActivity : ComponentActivity() {
+    @OptIn(ExperimentalUuidApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -53,6 +56,7 @@ class MainActivity : ComponentActivity() {
 
         Thread({
             try {
+                db.userInfoDao().createUuidIfEmpty(Uuid.random().toHexString())
                 val indexer = MP3Indexer(applicationContext, db, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
                 indexer.index()
             } catch (e: Exception) {

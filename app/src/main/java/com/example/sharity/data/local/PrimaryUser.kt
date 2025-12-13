@@ -12,6 +12,8 @@ object PrimaryUser {
 
     fun init(contentResolver: ContentResolver, username: String, font: String) : PrimaryUser {
         // TODO: Replace androidID with unique identifier, from device to connect later
+        // TODO: sign with uuid
+
         androidID = Settings.Secure.ANDROID_ID.toString()
         PrimaryUser.username = username
         PrimaryUser.font = font
