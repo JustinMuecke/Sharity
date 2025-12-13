@@ -12,6 +12,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import com.example.sharity.data.local.Database
 import com.example.sharity.data.local.Track
 import com.example.sharity.data.local.TrackDao
@@ -27,13 +29,20 @@ class MainActivity : ComponentActivity() {
         val db: TrackDao = instance.createDatabaseConnector(this.applicationContext)
 
         Thread({
-            db.InsertAll(Track(1, "b", "c", "d", 1, 1))
+            db.InsertAll(Track(1, "b", "c", "d", 1, 1),
+                Track(420, "Atemlos", "Helene Fischer", "Schlager", 2001, 2000000000))
         }).start()
 
         setContent {
-            val homeViewModel = viewModel<HomeScreenViewModel>()
             SharityTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    val homeViewModel = viewModel<HomeScreenViewModel>(
+                        factory = object : ViewModelProvider.Factory {
+                            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                                return HomeScreenViewModel(db) as T
+                            }
+                        }
+                    )
                     HomeScreen(
                         viewModel = homeViewModel,
                         modifier = Modifier.padding(innerPadding)

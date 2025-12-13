@@ -15,6 +15,8 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun TrackCard(title : String,
+              album: String,
+              artist: String,
               isSelected: Boolean,      // <--- New
               onClick: () -> Unit   ){
     Card(
