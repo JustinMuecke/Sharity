@@ -53,15 +53,17 @@ import com.example.sharity.ui.component.navBar.NavBar
 import kotlinx.coroutines.launch
 import com.example.sharity.ui.theme.SharityTheme
 import com.example.sharity.ui.feature.ProfileScreen
+import com.example.sharity.ui.feature.allsongsscreen.AllSongsView
+import com.example.sharity.ui.feature.allsongsscreen.AllSongsViewModel
 import com.example.sharity.ui.feature.homescreen.HomeScreen
 import com.example.sharity.ui.feature.playlistscreen.PlaylistView
-import com.example.sharity.ui.feature.playlistscreen.PlaylistViewModel
 import com.example.sharity.ui.feature.playlistselection.PlaylistSelectionScreen
 import com.example.sharity.ui.feature.playlistselection.PlaylistSelectionViewModel
 import androidx.compose.runtime.collectAsState
 import com.example.sharity.data.wrapper.Database
 import com.example.sharity.ui.feature.peersongs.PeerSongsScreen
 import com.example.sharity.ui.feature.peersongs.PeerSongsViewModel
+
 
 object RootDestinations {
     const val HOME = "home"
@@ -73,6 +75,8 @@ object RootDestinations {
     const val PLAYLIST_SELECTION = "playlists_selection" // New route for this screen
     const val PLAYLIST_VIEW = "playlist_view/{playlistId}" // Route for viewing an individual playlist
     const val PEER = "peer"
+
+    const val ALL_SONGS = "all_songs"
 }
 
 
@@ -124,11 +128,11 @@ class MainActivity : ComponentActivity() {
 
             // Get the current route/destination for the title logic
             val currentRoute = navBackStackEntry?.destination?.route
-            val playlistViewModel = viewModel<PlaylistViewModel>(
+            val allSongsViewModel = viewModel<AllSongsViewModel>(
                 factory = object : ViewModelProvider.Factory {
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         @Suppress("UNCHECKED_CAST")
-                        return PlaylistViewModel(db, exoPlayer) as T
+                        return AllSongsViewModel(db, exoPlayer) as T
                     }
                 }
             )
@@ -163,11 +167,12 @@ class MainActivity : ComponentActivity() {
                             )
                         },
 
-                        bottomBar = {
-                            if (playlistViewModel.currentTrack.collectAsState().value != null) {
-                                AudioControl(playlistViewModel) //TODO Extract Audio Control from playlist View
-                            }
+                    bottomBar = {
+                        if (allSongsViewModel.currentTrack.collectAsState().value != null) {
+                            AudioControl(allSongsViewModel) //TODO Extract Audio Control from playlist View
+                            //
                         }
+                    }
                 ) { innerPadding ->
 
                     // 3. Replace 'when (currentScreen)' with NavHost
@@ -182,14 +187,15 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier,
                                 db = db,
                                 exoPlayer = exoPlayer,
-                                playlistViewModel = playlistViewModel,
+                                allSongsViewModel = allSongsViewModel,
                                 onProfileClick = { navController.navigate(RootDestinations.PROFILE) },
 
                                 onHistoryClick = { navController.navigate(RootDestinations.HISTORY) },
                                 onFriendsClick = { navController.navigate(RootDestinations.FRIENDS) },
                                 onPlaylistsClick = { navController.navigate(RootDestinations.PLAYLISTS) },
                                 onListClick = { ("") },
-                                onOpenPeer = {navController.navigate(RootDestinations.PEER)}
+                                onOpenPeer = {navController.navigate(RootDestinations.PEER)},
+                                onAllsongsClick = { navController.navigate(RootDestinations.ALL_SONGS)},
                             )
                         }
 
@@ -217,6 +223,12 @@ class MainActivity : ComponentActivity() {
                         composable(RootDestinations.PROFILE) {
                             ProfileScreen(Modifier.padding(innerPadding))
                         }
+                        composable( RootDestinations.ALL_SONGS){
+                            AllSongsView(
+                                viewModel = allSongsViewModel,
+                                modifier = Modifier.fillMaxSize(1f),
+                            )
+                        }
                         composable(RootDestinations.PLAYLISTS) { // Note: I believe you meant RootDestinations.PLAYLIST_SELECTION here, but I'll use RootDestinations.PLAYLISTS as per your code
                             PlaylistSelectionScreen(
                                 onViewPlaylist = { playlistId ->
@@ -240,16 +252,7 @@ class MainActivity : ComponentActivity() {
 
                             // Pass the ViewModel and the derived ID to your view
                             PlaylistView(
-                                viewModel = playlistViewModel,
-                                // NOTE: You don't usually need the innerPadding here as it's passed to the NavHost.
-                                // The PlaylistView's internal Column will manage its own padding.
-                                // If you need the padding, pass it like this:
-                                modifier = Modifier,
-                                onProfileClick = {
-                                    navController.navigate(RootDestinations.PROFILE)
-                                },
-                                // You can optionally pass the ID to the ViewModel/PlaylistView
-                                // playlistId = playlistId // If PlaylistView needs it
+                                playlistId
                             )
                         }
                         composable(route=RootDestinations.PEER){

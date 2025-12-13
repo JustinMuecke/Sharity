@@ -37,38 +37,10 @@ fun PlaylistSelectionScreen(
             .fillMaxSize()
             .padding(horizontal = 16.dp)
     ) {
-        // --- 1. Top Button: All Songs Playlist ---
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-                .clickable {
-                    // When clicked, navigate to the special 'All Songs' playlist.
-                    // We'll use ID 0L as a convention for the 'All Songs' list.
-                    onViewPlaylist(0)
-                },
-            elevation = CardDefaults.cardElevation(2.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // You can add an Icon here for 'All Songs'
-                Text(
-                    text = "All Songs",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                // Optionally show total track count here
-                // Text(text = "999 Tracks", style = MaterialTheme.typography.bodySmall)
-            }
-        }
+
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- 2. Title for User Playlists ---
         Text(
             text = "Your Playlists",
             style = MaterialTheme.typography.titleLarge,

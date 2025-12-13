@@ -11,11 +11,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import com.example.sharity.ui.component.AudioControl
 import com.example.sharity.ui.component.SearchBar
@@ -25,12 +23,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
-import androidx.media3.exoplayer.ExoPlayer
-import com.example.sharity.data.local.AppDatabase
 import com.example.sharity.ui.component.navBar.NavBar
 import com.example.sharity.ui.component.share.PeerMiniProfileOverlay
 import com.example.sharity.ui.component.share.PeerSummary
-import com.example.sharity.ui.feature.playlistscreen.PlaylistViewModel
+
+import androidx.media3.exoplayer.ExoPlayer
+import com.example.sharity.data.local.AppDatabase
+import com.example.sharity.ui.feature.allsongsscreen.AllSongsView
+import com.example.sharity.ui.feature.allsongsscreen.AllSongsViewModel
 
 
 /*
@@ -43,13 +43,13 @@ fun HomeScreen(modifier: Modifier,
                db : AppDatabase,
                exoPlayer : ExoPlayer,
                onProfileClick: () -> Unit,
-               playlistViewModel: PlaylistViewModel,
+               allSongsViewModel: AllSongsViewModel,
                onHistoryClick: () -> Unit,
                onFriendsClick: () -> Unit,
                onPlaylistsClick: () -> Unit,
                onListClick: () -> Unit,
-               onOpenPeer: () -> Unit
-
+               onOpenPeer: () -> Unit,
+               onAllsongsClick: () -> Unit,
 ){
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -84,7 +84,6 @@ fun HomeScreen(modifier: Modifier,
                         text = "History"
                     )
                 }
-                // Friends Box
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -108,6 +107,20 @@ fun HomeScreen(modifier: Modifier,
                 ) {
                     Text(
                         text = "Playlists"
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Column {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable(onClick = onAllsongsClick) // ⬅️ ADD CLICKABLE
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        text = "All Songs"
                     )
                 }
             }
