@@ -12,6 +12,7 @@ import java.io.FileNotFoundException
 class MP3Indexer(
     val context: Context,
     val db: AppDatabase,
+    val uri: Uri,
 ) {
 
     fun index() {
@@ -23,9 +24,8 @@ class MP3Indexer(
      * Searches the shared storage for music files and inserts them into the database index and updated them accordingly.
      */
     private fun indexFiles() {
-        val location = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         val query = context.contentResolver.query(
-            location,
+            uri,
             arrayOf(
                 MediaStore.Audio.Media._ID,
                 MediaStore.Audio.Media.DURATION,
@@ -49,7 +49,7 @@ class MP3Indexer(
 
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
-                val uri = ContentUris.withAppendedId(location, id)
+                val uri = ContentUris.withAppendedId(uri, id)
 
                 val duration = cursor.getLong(durationColumn)
                 val title = cursor.getString(titleColumn)
