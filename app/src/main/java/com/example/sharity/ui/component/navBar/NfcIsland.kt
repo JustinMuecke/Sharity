@@ -14,13 +14,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.sharity.ui.theme.DarkBlackberry
 import com.example.sharity.ui.theme.GrapeGlimmer
+import com.example.sharity.ui.theme.PureWhite
 
 @Composable
 fun NfcIsland(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     backgroundColor: Color = DarkBlackberry,
-    text: String = "Share"
+    text: String = "Share",
 ) {
     Box(
         modifier = modifier
@@ -32,7 +33,8 @@ fun NfcIsland(
         Text(
             text = text,
             style = MaterialTheme.typography.labelLarge,
-            color = Color.Black
+            color = Color.White
+
         )
     }
 }
