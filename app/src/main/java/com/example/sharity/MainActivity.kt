@@ -13,10 +13,6 @@ import com.example.sharity.ui.theme.SharityTheme
 import com.example.sharity.ui.feature.homescreen.HomeScreen
 import com.example.sharity.ui.feature.homescreen.HomeScreenViewModel
 
-
-import com.example.sharity.ui.feature.ProfileScreen
-
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,7 +21,8 @@ class MainActivity : ComponentActivity() {
             val homeViewModel = viewModel<HomeScreenViewModel>()
             SharityTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    HomeScreen(viewModel = homeViewModel,
+                    HomeScreen(
+                        viewModel = homeViewModel,
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
