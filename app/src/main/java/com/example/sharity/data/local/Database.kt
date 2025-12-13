@@ -6,12 +6,10 @@ import androidx.room.Room.databaseBuilder
 
 object Database {
     fun createDatabaseConnector(applicationContext: Context): TrackDao {
-        val db = Room.databaseBuilder(
+        return databaseBuilder(
             applicationContext,
             AppDatabase::class.java,
-            "database-1"
-        ).build()
-
-        return db.trackDao();
+            "Sharity database"
+        ).build().trackDao()
     }
 }
