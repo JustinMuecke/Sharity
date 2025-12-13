@@ -20,8 +20,6 @@ fun HomeScreen(viewModel : HomeScreenViewModel, modifier : Modifier){
         Column(
             modifier = modifier.fillMaxSize() // Fill the screen
         ) {
-            TagSelection()
-            SearchBar(viewModel)
             TrackList(viewModel,
                 modifier = Modifier.weight(1f))
             AudioControl(viewModel)
