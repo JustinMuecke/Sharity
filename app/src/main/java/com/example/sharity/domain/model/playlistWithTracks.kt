@@ -8,7 +8,7 @@ data class PlaylistWithTracks(
     @Embedded val playlist: Playlist,
 
     @Relation(
-        parentColumn = "playlistID",
+        parentColumn = "playlist_id",
         entityColumn = "content_uri",
         associateBy = Junction(TrackPlaylistJunction::class)
     )
