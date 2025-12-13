@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,19 +30,17 @@ import com.example.sharity.data.device.NfcClient
 import com.example.sharity.data.local.PrimaryUser
 import com.example.sharity.data.wrapper.Database
 import com.example.sharity.data.wrapper.NfcController
+import com.example.sharity.domain.model.Track
 import com.example.sharity.ui.feature.ProfileScreen
 import com.example.sharity.ui.feature.homescreen.HomeScreen
 import com.example.sharity.ui.feature.homescreen.HomeScreenViewModel
+import com.example.sharity.ui.feature.peersongs.PeerSongsScreen
+import com.example.sharity.ui.feature.peersongs.PeerSongsViewModel
+import com.example.sharity.ui.feature.trade.TradeReviewScreen
 import com.example.sharity.ui.theme.SharityTheme
 import kotlinx.coroutines.launch
 
-
-import androidx.compose.runtime.collectAsState
-import com.example.sharity.ui.feature.peersongs.PeerSongsScreen
-import com.example.sharity.ui.feature.peersongs.PeerSongsViewModel
-
-
-enum class RootScreen { HOME, PROFILE, PEER_SONGS }
+enum class RootScreen { HOME, PROFILE, PEER_SONGS, TRADE_REVIEW }
 
 private lateinit var nfcController: NfcController
 private val nfcClient = NfcClient()
@@ -80,6 +78,10 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
 
                     var currentScreen by remember { mutableStateOf(RootScreen.HOME) }
+
+                    // Trade flow (temporary state holder)
+                    var mySelectedTracks by remember { mutableStateOf<List<Track>>(emptyList()) }
+                    var theirSelectedTracks by remember { mutableStateOf<List<Track>>(emptyList()) }
 
                     val homeViewModel = viewModel<HomeScreenViewModel>(
                         factory = object : ViewModelProvider.Factory {
@@ -123,15 +125,61 @@ class MainActivity : ComponentActivity() {
                                     currentScreen = RootScreen.HOME
                                 },
                                 onFinished = {
-                                    // TODO: next step = navigate to Trade/Confirm screen
-                                    // For now: keep it simple and go back home
-                                    val selected = peerSongsViewModel.getSelectedTracks()
-                                    // later: pass selected to next screen
-                                    peerSongsViewModel.clearSelection()
+                                    // Your selection
+                                    mySelectedTracks = peerSongsViewModel.getSelectedTracks()
+
+                                    // Placeholder: their selection (2 songs)
+                                    theirSelectedTracks = listOf(
+                                        Track(
+                                            contentUri = "peer://their/1",
+                                            title = "Their Song One",
+                                            artist = "Peer Artist",
+                                            releaseYear = 2022,
+                                            duration = 180_000L
+                                        ),
+                                        Track(
+                                            contentUri = "peer://their/2",
+                                            title = "Their Song Two",
+                                            artist = "Peer Artist",
+                                            releaseYear = 2021,
+                                            duration = 210_000L
+                                        )
+                                    )
+
+                                    currentScreen = RootScreen.TRADE_REVIEW
+                                },
+                                modifier = Modifier.padding(innerPadding)
+                            )
+                        }
+
+                        RootScreen.TRADE_REVIEW -> {
+                            TradeReviewScreen(
+                                myTracks = mySelectedTracks,
+                                theirTracks = theirSelectedTracks,
+                                onCancel = {
+                                    mySelectedTracks = emptyList()
+                                    theirSelectedTracks = emptyList()
+                                    currentScreen = RootScreen.PEER_SONGS
+                                },
+                                onConfirm = {
+                                    // TODO: later trigger trade + NFC/Bluetooth transfer
+                                    mySelectedTracks = emptyList()
+                                    theirSelectedTracks = emptyList()
                                     currentScreen = RootScreen.HOME
                                 },
                                 modifier = Modifier.padding(innerPadding)
                             )
+                        }
+
+                        else -> {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(innerPadding),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("Unknown screen")
+                            }
                         }
                     }
                 }
