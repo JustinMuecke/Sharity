@@ -1,5 +1,6 @@
 package com.example.sharity.ui.component
 
+import TrackCard
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,11 +20,15 @@ fun TrackList(viewModel : HomeScreenViewModel, modifier : Modifier){
         modifier = modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ){
-        items(trackList) { trackName ->
+        items(trackList) { track ->
             TrackCard(
-                title = trackName,
-                isSelected = (trackName == selectedTrack),
-                onClick = { viewModel.selectTrack(trackName) }
+                uri = track.contentUri,
+                title = track.title,
+                artist = track.artist?: "",
+                isSelected = (track.title == selectedTrack),
+                onClick = {
+                    viewModel.selectTrack(track)
+                }
             )
         }
     }
