@@ -11,7 +11,7 @@ import com.example.sharity.domain.model.Track
 @Dao
 interface TrackDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertAll(vararg track: Track)
+    fun InsertAll(vararg track: Track)
 
     @Delete
     fun delete(track: Track)
