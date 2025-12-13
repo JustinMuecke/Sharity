@@ -10,7 +10,7 @@ import com.example.sharity.domain.usecase.PlaylistDao
 import com.example.sharity.domain.usecase.TrackDao
 import com.example.sharity.domain.usecase.UserDao
 
-@Database(entities = [Track::class, Playlist::class, TrackPlaylistJunction::class ,User::class], version = 4)
+@Database(entities = [Track::class, Playlist::class, TrackPlaylistJunction::class ,User::class], version = 5)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun trackDao(): TrackDao
     abstract fun playlistDao(): PlaylistDao
