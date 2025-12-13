@@ -43,21 +43,20 @@ fun HomeScreen(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        NavBar(
-            showBack = false,
-            onBackClick = {},
-            onNfcClick = { showPeerOverlay.value = true },
-            onProfileClick = onProfileClick,
-            modifier = Modifier.align(Alignment.TopCenter)
-        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = 72.dp)
         ) {
+            NavBar(
+                showBack = false,
+                onBackClick = {},
+                onNfcClick = { showPeerOverlay.value = true },
+                onProfileClick = onProfileClick,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
 
-
-            TagSelection()
             SearchBar(viewModel)
 
             TrackList(
