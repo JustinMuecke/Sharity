@@ -2,10 +2,11 @@ package com.example.sharity.data.device
 
 import android.nfc.cardemulation.HostApduService
 import android.os.Bundle
+import android.util.Log
+import com.example.sharity.data.local.PrimaryUser
 
 class NfcProfileService : HostApduService() {
-    //TODO: Replace MY_PROFILE_DATA with the MAC address, name and stats to send
-    private val profile = "MY_PROFILE_DATA".toByteArray()
+    private lateinit var profile: ByteArray
     private var offset = 0
 
     override fun processCommandApdu(
@@ -13,27 +14,44 @@ class NfcProfileService : HostApduService() {
         extras: Bundle?
     ): ByteArray {
 
+        /*
+            0x01 -> Request Profile
+            0x02 -> Request next chunk of profile
+            0x03 -> Transaction complete
+            0x06 -> Error
+         */
+
+        if (isSelectApdu(commandApdu)) {
+            offset = 0
+            return byteArrayOf(0x90.toByte(), 0x00)
+        }
+
+        if (commandApdu.isEmpty()) {
+            return statusError()
+        }
+
         return when (commandApdu[0]) {
-            /*
-                0x01 -> Request Profile
-                0x02 -> Request next chunk of profile
-                0x03 -> Transaction complete
-                0x06 -> Error
-             */
             0x01.toByte() -> {
+                Log.d("NfcProfileServer", "REQUEST PROFILE")
+                profile = PrimaryUser.getConcatenatedData()
                 offset = 0
                 nextChunk()
             }
 
             0x02.toByte() -> {
+                Log.d("NfcProfileServer", "REQUEST NEXT CHUNK")
                 nextChunk()
             }
 
             0x03.toByte() -> {
+                Log.e("NfcProfileServer", "PROFILE COMPLETE")
                 byteArrayOf(0x03, 0x00)
             }
 
-            else -> statusError()
+            else -> {
+                Log.e("NfcProfileServer", "UNKNOWN APDU")
+                statusError()
+            }
         }
     }
 
@@ -53,6 +71,11 @@ class NfcProfileService : HostApduService() {
         offset = 0
     }
 
-    private fun statusError() =
-        byteArrayOf(0x6F.toByte(), 0x00)
+    private fun statusError() = byteArrayOf(0x6F.toByte(), 0x00)
+
+    private fun isSelectApdu(apdu: ByteArray): Boolean {
+        return apdu.size >= 4 &&
+                apdu[1] == 0xA4.toByte()
+    }
+
 }
