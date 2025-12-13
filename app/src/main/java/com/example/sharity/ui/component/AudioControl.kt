@@ -1,6 +1,5 @@
 package com.example.sharity.ui.component
 
-import android.media.session.MediaSession
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
@@ -45,20 +45,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.sharity.ui.feature.homescreen.HomeScreenViewModel
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.ui.graphics.Color
-import com.example.sharity.ui.feature.homescreen.RepeatMode
+import com.example.sharity.ui.feature.playlistscreen.PlaylistViewModel
+import com.example.sharity.ui.feature.playlistscreen.RepeatMode
 
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AudioControl(viewModel : HomeScreenViewModel){
+fun AudioControl(viewModel : PlaylistViewModel){
     val isPlaying by viewModel.isPlaying.collectAsState()
     val nextTracks by viewModel.nextTracks.collectAsState()
     val currentTrack by viewModel.currentTrack.collectAsState()

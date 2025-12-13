@@ -12,8 +12,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import com.example.sharity.ui.component.navBar.NavBar
+
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.Text
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,11 +30,15 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.exoplayer.ExoPlayer
 import com.example.sharity.data.device.MP3Indexer
-import com.example.sharity.data.wrapper.Database
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.sharity.data.device.NfcClient
 import com.example.sharity.data.local.PrimaryUser
-import com.example.sharity.data.wrapper.Database
 import com.example.sharity.data.wrapper.NfcController
 import com.example.sharity.ui.feature.ProfileScreen
 import com.example.sharity.ui.feature.homescreen.HomeScreen
@@ -40,10 +48,34 @@ import kotlin.uuid.Uuid
 import com.example.sharity.ui.theme.SharityTheme
 import kotlinx.coroutines.launch
 
-
+import com.example.sharity.ui.component.AudioControl
+import com.example.sharity.ui.component.navBar.NavBar
+import kotlinx.coroutines.launch
+import com.example.sharity.ui.theme.SharityTheme
+import com.example.sharity.ui.feature.ProfileScreen
+import com.example.sharity.ui.feature.homescreen.HomeScreen
+import com.example.sharity.ui.feature.playlistscreen.PlaylistView
+import com.example.sharity.ui.feature.playlistscreen.PlaylistViewModel
+import com.example.sharity.ui.feature.playlistselection.PlaylistSelectionScreen
+import com.example.sharity.ui.feature.playlistselection.PlaylistSelectionViewModel
 import androidx.compose.runtime.collectAsState
+import com.example.sharity.data.wrapper.Database
 import com.example.sharity.ui.feature.peersongs.PeerSongsScreen
 import com.example.sharity.ui.feature.peersongs.PeerSongsViewModel
+
+object RootDestinations {
+    const val HOME = "home"
+    const val PROFILE = "profile"
+    const val NFC = "nfc"
+    const val HISTORY = "history" // New route
+    const val FRIENDS = "friends" // New route
+    const val PLAYLISTS = "playlists" // New route
+    const val PLAYLIST_SELECTION = "playlists_selection" // New route for this screen
+    const val PLAYLIST_VIEW = "playlist_view/{playlistId}" // Route for viewing an individual playlist
+    const val PEER = "peer"
+}
+
+
 
 
 enum class RootScreen { HOME, PROFILE, PEER_SONGS }
@@ -70,52 +102,157 @@ class MainActivity : ComponentActivity() {
                 PrimaryUser.init(db, "user1", "some_font")
                 val indexer =
                     MP3Indexer(applicationContext, db, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
-                val indexer = MP3Indexer(
-                    applicationContext,
-                    db,
-                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-                )
+
                 indexer.index()
             } catch (e: Exception) {
                 Log.e("ERROR", "MP3Indexer failed", e)
             }
         }.start()
         
+
+
+
+
         setContent {
+            val navController = rememberNavController()
+
+            // 2. Observe the NavController's back stack state
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+
+            // Check if there is a previous screen to go back to
+            val showBackButton = navController.previousBackStackEntry != null
+
+            // Get the current route/destination for the title logic
+            val currentRoute = navBackStackEntry?.destination?.route
+            val playlistViewModel = viewModel<PlaylistViewModel>(
+                factory = object : ViewModelProvider.Factory {
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        @Suppress("UNCHECKED_CAST")
+                        return PlaylistViewModel(db, exoPlayer) as T
+                    }
+                }
+            )
+
             SharityTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    topBar = {
+                        val screenTitle = when ("") {
+                            "home" -> "My Music Library"
+                            "now_playing" -> "Now Playing"
+                            // Add more cases for other routes
+                            else -> "App"
+                        }
+                            NavBar(
+                                showBack = showBackButton, // Pass the derived state
+                                onBackClick = {
+                                    // Use the NavController's standard function
+                                    navController.navigateUp()
+                                },
+                                onNfcClick = {
+                                    // Navigate to a specific NFC screen route
+                                    navController.navigate(RootDestinations.NFC)
+                                },
+                                onProfileClick = {
+                                    // Navigate to the Profile screen route
+                                    navController.navigate(RootDestinations.PROFILE)
+                                },
+                                onOpenPeer = {
 
-                    var currentScreen by remember { mutableStateOf(RootScreen.HOME) }
+                                }
+                            )
+                        },
 
-                    val homeViewModel = viewModel<HomeScreenViewModel>(
-                        factory = object : ViewModelProvider.Factory {
-                            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                                @Suppress("UNCHECKED_CAST")
-                                return HomeScreenViewModel(db, exoPlayer) as T
+                        bottomBar = {
+                            if (playlistViewModel.currentTrack.collectAsState().value != null) {
+                                AudioControl(playlistViewModel) //TODO Extract Audio Control from playlist View
                             }
                         }
-                    )
+                ) { innerPadding ->
 
-                    when (currentScreen) {
+                    // 3. Replace 'when (currentScreen)' with NavHost
+                    NavHost(
+                        navController = navController,
+                        startDestination = RootDestinations.HOME,
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
 
-                        RootScreen.HOME -> {
+                        composable(RootDestinations.HOME) {
                             HomeScreen(
-                                viewModel = homeViewModel,
-                                modifier = Modifier.padding(innerPadding),
-                                onProfileClick = { currentScreen = RootScreen.PROFILE },
-                                onOpenPeer = { currentScreen = RootScreen.PEER_SONGS }
+                                modifier = Modifier,
+                                db = db,
+                                exoPlayer = exoPlayer,
+                                playlistViewModel = playlistViewModel,
+                                onProfileClick = { navController.navigate(RootDestinations.PROFILE) },
+
+                                onHistoryClick = { navController.navigate(RootDestinations.HISTORY) },
+                                onFriendsClick = { navController.navigate(RootDestinations.FRIENDS) },
+                                onPlaylistsClick = { navController.navigate(RootDestinations.PLAYLISTS) },
+                                onListClick = { ("") },
+                                onOpenPeer = {navController.navigate(RootDestinations.PEER)}
                             )
                         }
 
-                        RootScreen.PROFILE -> {
-                            ProfileScreen(
-                                modifier = Modifier.padding(innerPadding),
-                                onBackClick = { currentScreen = RootScreen.HOME },
-                                onOpenPeer = { currentScreen = RootScreen.PEER_SONGS }
+                        // Add the new destination composables
+                        composable(RootDestinations.HISTORY) {
+                            // Placeholder for the History Screen
+                            Text(text = "History Screen Content")
+                        }
+
+                        composable(RootDestinations.FRIENDS) {
+                            // Placeholder for the Friends Screen
+                            Text(text = "Friends Screen Content")
+                        }
+
+                        composable(RootDestinations.PLAYLISTS) {
+                            PlaylistSelectionScreen(
+                                onViewPlaylist = { playlistId ->
+                                    // Navigation remains t1he same, but 'playlistId' is now an Int
+                                    navController.navigate("playlist_view/$playlistId")
+                                },
+                                modifier = Modifier.padding(innerPadding)
                             )
                         }
 
-                        RootScreen.PEER_SONGS -> {
+                        composable(RootDestinations.PROFILE) {
+                            ProfileScreen(Modifier.padding(innerPadding))
+                        }
+                        composable(RootDestinations.PLAYLISTS) { // Note: I believe you meant RootDestinations.PLAYLIST_SELECTION here, but I'll use RootDestinations.PLAYLISTS as per your code
+                            PlaylistSelectionScreen(
+                                onViewPlaylist = { playlistId ->
+                                    // The 'playlistId' is now an Int
+                                    navController.navigate("playlist_view/$playlistId")
+                                },
+                                // The modifier passed from Scaffold content should be used here
+                                modifier = Modifier.padding(innerPadding)
+                            )
+                        }
+
+                        // 2. Destination for viewing the individual playlist (Must be a direct child of NavHost)
+                        composable(
+                            route = RootDestinations.PLAYLIST_VIEW, // "playlist_view/{playlistId}"
+                            arguments = listOf(navArgument("playlistId") {
+                                type = NavType.IntType // ⬅️ FIX: IntType to match navigation and retrieval
+                            })
+                        ) { backStackEntry ->
+                            // Retrieve the argument as an Int
+                            val playlistId = backStackEntry.arguments?.getInt("playlistId") ?: 0
+
+                            // Pass the ViewModel and the derived ID to your view
+                            PlaylistView(
+                                viewModel = playlistViewModel,
+                                // NOTE: You don't usually need the innerPadding here as it's passed to the NavHost.
+                                // The PlaylistView's internal Column will manage its own padding.
+                                // If you need the padding, pass it like this:
+                                modifier = Modifier,
+                                onProfileClick = {
+                                    navController.navigate(RootDestinations.PROFILE)
+                                },
+                                // You can optionally pass the ID to the ViewModel/PlaylistView
+                                // playlistId = playlistId // If PlaylistView needs it
+                            )
+                        }
+                        composable(route=RootDestinations.PEER){
                             val peerSongsViewModel = viewModel<PeerSongsViewModel>()
                             val state = peerSongsViewModel.uiState.collectAsState().value
 
@@ -126,7 +263,7 @@ class MainActivity : ComponentActivity() {
                                 onToggleSelect = { track -> peerSongsViewModel.toggleSelect(track) },
                                 onCancel = {
                                     peerSongsViewModel.clearSelection()
-                                    currentScreen = RootScreen.HOME
+                                    navController.navigateUp()
                                 },
                                 onFinished = {
                                     // TODO: next step = navigate to Trade/Confirm screen
@@ -134,11 +271,12 @@ class MainActivity : ComponentActivity() {
                                     val selected = peerSongsViewModel.getSelectedTracks()
                                     // later: pass selected to next screen
                                     peerSongsViewModel.clearSelection()
-                                    currentScreen = RootScreen.HOME
+                                    navController.navigateUp()
                                 },
                                 modifier = Modifier.padding(innerPadding)
                             )
                         }
+
                     }
                 }
             }
