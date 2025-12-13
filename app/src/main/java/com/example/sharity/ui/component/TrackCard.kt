@@ -14,7 +14,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun TrackCard(title : String,
+fun TrackCard(
+                uri : String,
+                title : String,
               artist: String,
               isSelected: Boolean,      // <--- New
               onClick: () -> Unit   ){

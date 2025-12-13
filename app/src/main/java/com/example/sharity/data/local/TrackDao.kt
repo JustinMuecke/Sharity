@@ -19,5 +19,7 @@ interface TrackDao {
     fun update(track: Track)
 
     @Query("SELECT * FROM track")
-    suspend fun getAll() : List<Track>
-}
+    fun getAll() : List<Track>
+
+    @Query("SELECT * FROM track")
+    suspend fun getAllAsync() : List<Track>}

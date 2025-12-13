@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.media3.exoplayer.ExoPlayer
 import com.example.sharity.data.device.MP3Indexer
 import com.example.sharity.data.local.Database
 import com.example.sharity.data.local.Track
@@ -27,19 +28,18 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val db = Database.createDatabaseConnector(this.applicationContext)
-
+        val exoPlayer = ExoPlayer.Builder(applicationContext).build()
         Thread({
             MP3Indexer(applicationContext, db).index()
         }).start()
 
         setContent {
-            val homeViewModel = viewModel<HomeScreenViewModel>()
             SharityTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     val homeViewModel = viewModel<HomeScreenViewModel>(
                         factory = object : ViewModelProvider.Factory {
                             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                                return HomeScreenViewModel(db) as T
+                                return HomeScreenViewModel(db, exoPlayer) as T
                             }
                         }
                     )
