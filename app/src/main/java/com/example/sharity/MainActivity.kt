@@ -12,6 +12,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import com.example.sharity.data.device.MP3Indexer
 import com.example.sharity.data.local.Database
 import com.example.sharity.data.local.Track
@@ -34,6 +36,13 @@ class MainActivity : ComponentActivity() {
             val homeViewModel = viewModel<HomeScreenViewModel>()
             SharityTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    val homeViewModel = viewModel<HomeScreenViewModel>(
+                        factory = object : ViewModelProvider.Factory {
+                            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                                return HomeScreenViewModel(db) as T
+                            }
+                        }
+                    )
                     HomeScreen(
                         viewModel = homeViewModel,
                         modifier = Modifier.padding(innerPadding)
