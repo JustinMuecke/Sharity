@@ -8,7 +8,7 @@ object Database {
         val db = Room.databaseBuilder(
             applicationContext,
             AppDatabase::class.java,
-            "snarity_database"
+            "sharity-database"
         ).build()
 
         return db
