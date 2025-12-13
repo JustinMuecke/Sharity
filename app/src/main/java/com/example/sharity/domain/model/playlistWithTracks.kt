@@ -9,7 +9,7 @@ data class PlaylistWithTracks(
 
     @Relation(
         parentColumn = "playlistID",
-        entityColumn = "trackID",
+        entityColumn = "content_uri",
         associateBy = Junction(TrackPlaylistJunction::class)
     )
 

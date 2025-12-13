@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 
 @Entity(
-    primaryKeys = ["trackID", "playlistID",],
+    primaryKeys = ["content_uri", "playlistID",],
     foreignKeys = [
         ForeignKey(
             entity = Playlist::class,
@@ -14,13 +14,13 @@ import androidx.room.ForeignKey
         ),
         ForeignKey(
             entity = Track::class,
-            parentColumns = ["trackID"],
-            childColumns = ["trackID"],
+            parentColumns = ["content_uri"],
+            childColumns = ["content_uri"],
             onDelete = ForeignKey.CASCADE
         )
     ]
 )
 data class TrackPlaylistJunction(
     val playlistID: Int,
-    val trackID: Int
+    val content_uri: String
 )

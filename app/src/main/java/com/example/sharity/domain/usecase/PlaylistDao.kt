@@ -27,7 +27,7 @@ interface PlaylistDao {
         insertPlaylistTrackCrossRef(
             TrackPlaylistJunction(
                 playlist.playlistID,
-                track.trackID
+                track.contentUri
             )
         )
     }

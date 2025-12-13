@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.sharity.data.device.MP3Indexer
 import com.example.sharity.data.local.Database
 import com.example.sharity.ui.theme.SharityTheme
 import com.example.sharity.ui.feature.homescreen.HomeScreen
@@ -23,6 +24,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val dbInstance = Database.createDatabaseConnector(this.applicationContext)
 
+        Thread({
+            MP3Indexer(applicationContext, dbInstance).index()
+        }).start()
 
         setContent {
             val homeViewModel = viewModel<HomeScreenViewModel>()
