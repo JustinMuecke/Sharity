@@ -35,7 +35,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
-import com.example.sharity.ui.component.BackButton
+import com.example.sharity.ui.component.navBar.NavBar
 
 
 // reference to own files
@@ -90,69 +90,71 @@ fun ProfileScreen(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
+        Box(modifier = Modifier.fillMaxSize()) {
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start
+            // Top Navigation Bar
+            NavBar(
+                showBack = true,
+                onBackClick = onBackClick,
+                onNfcClick = { /* TODO: NFC flow */ },
+                onProfileClick = { /* optional: noop (already on profile) */ },
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
+
+            // Screen content below the NavBar
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp)
+                    .padding(top = 72.dp), // reserve space for navbar
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                BackButton(
-                    onClick = onBackClick,
-                    // modifier = Modifier
-                    //    .padding(16.dp)
-                    //    .align(Alignment.TopStart as Alignment.Vertical)
+                ProfileHeader(
+                    nameState = userNameState,
+                    isEditing = isEditingName.value,
+                    onStartEdit = { isEditingName.value = true },
+                    onDone = { newName ->
+                        val sanitized = sanitizeDisplayName(newName)
+                        userNameState.value = sanitized
+                        isEditingName.value = false
+                    },
+                    onCancel = { isEditingName.value = false },
+                    profileImage = profileImageState.value,
+                    onAvatarClick = { isAvatarDialogOpen.value = true }
+                )
+
+                StatsSection(stats = stats)
+
+                BioSection(
+                    bioState = bioState,
+                    isEditing = isEditingBio.value,
+                    onStartEdit = { isEditingBio.value = true },
+                    onDone = { newBio ->
+                        val sanitized = sanitizeBioText(newBio)
+                        bioState.value = sanitized
+                        isEditingBio.value = false
+                    },
+                    onCancel = { isEditingBio.value = false }
+                )
+
+                BadgesSection(badges = badges)
+            }
+
+            if (isAvatarDialogOpen.value) {
+                AvatarPickerDialog(
+                    current = profileImageState.value,
+                    onSelect = { selected ->
+                        profileImageState.value = selected
+                    },
+                    onDismiss = { isAvatarDialogOpen.value = false }
                 )
             }
-            ProfileHeader(
-                nameState = userNameState,
-                isEditing = isEditingName.value,
-                onStartEdit = { isEditingName.value = true },
-                onDone = { newName ->
-                    val sanitized = sanitizeDisplayName(newName)
-                    userNameState.value = sanitized
-                    isEditingName.value = false
-                    // later: save to DB
-                },
-                onCancel = { isEditingName.value = false },
-                profileImage = profileImageState.value,
-                onAvatarClick = { isAvatarDialogOpen.value = true }
-            )
-
-            StatsSection(stats = stats)
-
-            BioSection(
-                bioState = bioState,
-                isEditing = isEditingBio.value,
-                onStartEdit = { isEditingBio.value = true },
-                onDone = { newBio ->
-                    val sanitized = sanitizeBioText(newBio)
-                    bioState.value = sanitized
-                    isEditingBio.value = false
-                    // later: save to DB
-                },
-                onCancel = { isEditingBio.value = false }
-            )
-
-            BadgesSection(badges = badges)
-        }
-
-        if (isAvatarDialogOpen.value) {
-            AvatarPickerDialog(
-                current = profileImageState.value,
-                onSelect = { selected ->
-                    profileImageState.value = selected
-                    // later: save to DB
-                },
-                onDismiss = { isAvatarDialogOpen.value = false }
-            )
         }
     }
 }
+
+
+
 
 @Composable
 fun ProfileHeader(
