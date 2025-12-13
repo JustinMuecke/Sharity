@@ -1,4 +1,4 @@
-package com.example.sharity.domain.usecase
+package com.example.sharity.data.local
 
 import androidx.room.Dao
 import androidx.room.Delete
@@ -20,5 +20,7 @@ interface TrackDao {
     fun update(track: Track)
 
     @Query("SELECT * FROM tracks")
-    fun getAll() : List<Track>
+    suspend fun getAll() : List<Track>
+    @Query("SELECT * FROM tracks")
+    fun getAllAsync() : List<Track>
 }
