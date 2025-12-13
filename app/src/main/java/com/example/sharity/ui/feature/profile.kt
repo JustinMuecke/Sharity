@@ -103,9 +103,9 @@ fun ProfileScreen(
             ) {
                 BackButton(
                     onClick = onBackClick,
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .align(Alignment.TopStart as Alignment.Vertical)
+                    // modifier = Modifier
+                    //    .padding(16.dp)
+                    //    .align(Alignment.TopStart as Alignment.Vertical)
                 )
             }
             ProfileHeader(
