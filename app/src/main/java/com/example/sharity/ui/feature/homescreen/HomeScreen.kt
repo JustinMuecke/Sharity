@@ -25,14 +25,20 @@ fun HomeScreen(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-
+        NavBar(
+            showBack = false,
+            onBackClick = {},
+            onNfcClick = { /* TODO */ },
+            onProfileClick = onProfileClick
+        )
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // HomeTopBar(onProfileClick = onProfileClick)
+
 
             TagSelection()
             SearchBar(viewModel)
+
             TrackList(
                 viewModel = viewModel,
                 modifier = Modifier.weight(1f)
@@ -41,12 +47,7 @@ fun HomeScreen(
         }
 
     }
-    NavBar(
-        showBack = false,
-        onBackClick = {},
-        onNfcClick = { /* TODO */ },
-        onProfileClick = onProfileClick
-    )
+
 
 }
 
