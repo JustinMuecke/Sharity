@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider.NewInstanceFactory.Companion.instance
 import androidx.lifecycle.viewModelScope
 import com.example.sharity.data.local.Database
-import com.example.sharity.data.local.Track
 import com.example.sharity.data.local.TrackDao
+import com.example.sharity.domain.model.Track
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,7 +14,6 @@ import kotlinx.coroutines.launch
 class HomeScreenViewModel(private val trackDao: TrackDao) : ViewModel() {
 
     private val _tracks = MutableStateFlow<List<Track>>(emptyList())
-    val tracks = _tracks.asStateFlow()
 
     init {
         // 2. Trigger the load immediately when ViewModel starts
@@ -31,6 +30,11 @@ class HomeScreenViewModel(private val trackDao: TrackDao) : ViewModel() {
             _tracks.value = trackObjects
         }
     }
+
+    private val _names = MutableStateFlow(
+        listOf("Alice", "Bob", "Charlie", "David", "Eve", "Justin", "Peter", "Samuel", "Alex", "Fabi")
+    )
+    val tracks = _names.asStateFlow()
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying = _isPlaying.asStateFlow()
 
