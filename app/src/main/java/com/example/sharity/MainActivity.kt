@@ -26,6 +26,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.exoplayer.ExoPlayer
 import com.example.sharity.data.device.MP3Indexer
+import com.example.sharity.data.wrapper.Database
+import androidx.lifecycle.lifecycleScope
 import com.example.sharity.data.device.NfcClient
 import com.example.sharity.data.local.PrimaryUser
 import com.example.sharity.data.wrapper.Database
@@ -33,31 +35,35 @@ import com.example.sharity.data.wrapper.NfcController
 import com.example.sharity.ui.feature.ProfileScreen
 import com.example.sharity.ui.feature.homescreen.HomeScreen
 import com.example.sharity.ui.feature.homescreen.HomeScreenViewModel
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 import com.example.sharity.ui.theme.SharityTheme
 import kotlinx.coroutines.launch
 
 enum class RootScreen { HOME, PROFILE, PEER_SONGS }
 
+// FIXME: Move to viewmodel, to prevent Memoryleak
 private lateinit var nfcController: NfcController
 private val nfcClient = NfcClient()
 
 class MainActivity : ComponentActivity() {
-
+    @OptIn(ExperimentalUuidApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        PrimaryUser.init(this.contentResolver, "user1", "some_font")
-
         nfcController = NfcController(this) { tag ->
             logNfcMessages(tag)
         }
-
         val db = Database.createDatabaseConnector(this.applicationContext)
         val exoPlayer = ExoPlayer.Builder(applicationContext).build()
 
-        Thread({
+        Thread {
             try {
+                db.userInfoDao().createUuidIfEmpty(Uuid.random().toHexString())
+                PrimaryUser.init(db, "user1", "some_font")
+                val indexer =
+                    MP3Indexer(applicationContext, db, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
                 val indexer = MP3Indexer(
                     applicationContext,
                     db,
@@ -67,8 +73,8 @@ class MainActivity : ComponentActivity() {
             } catch (e: Exception) {
                 Log.e("ERROR", "MP3Indexer failed", e)
             }
-        }).start()
-
+        }.start()
+        
         setContent {
             SharityTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
