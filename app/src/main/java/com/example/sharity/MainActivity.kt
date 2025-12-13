@@ -29,7 +29,6 @@ import com.example.sharity.data.local.PrimaryUser
 import com.example.sharity.data.wrapper.NfcController
 import kotlinx.coroutines.launch
 import com.example.sharity.ui.theme.SharityTheme
-import com.example.sharity.data.local.Database
 import com.example.sharity.ui.feature.ProfileScreen
 import com.example.sharity.ui.feature.homescreen.HomeScreen
 import com.example.sharity.ui.feature.homescreen.HomeScreenViewModel
