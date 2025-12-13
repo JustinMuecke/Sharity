@@ -18,7 +18,7 @@ fun BackButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     backgroundColor: Color = DarkBlackberry,
-    iconColor: Color = Color.Black
+    iconColor: Color = Color.White
 ) {
     Surface(
         modifier = modifier.size(44.dp),

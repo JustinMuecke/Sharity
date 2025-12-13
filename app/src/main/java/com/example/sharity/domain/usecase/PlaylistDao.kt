@@ -22,7 +22,7 @@ interface PlaylistDao {
     fun insertPlaylistTrackCrossRef(crossRef: TrackPlaylistJunction)
 
     @Transaction
-    open fun addTrackToPlaylist(playlist: Playlist, track: Track)
+    fun addTrackToPlaylist(playlist: Playlist, track: Track)
     {
         insertPlaylistTrackCrossRef(
             TrackPlaylistJunction(
@@ -39,6 +39,6 @@ interface PlaylistDao {
     fun update(playlist: Playlist)
 
     @Transaction
-    @Query("SELECT * FROM playlists WHERE playlistID = :id")
+    @Query("SELECT * FROM playlists WHERE playlist_id = :id")
     fun getPlaylist(id: Int) : PlaylistWithTracks
 }
