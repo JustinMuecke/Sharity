@@ -111,6 +111,8 @@ class MainActivity : ComponentActivity() {
         nfcController.onNewIntent(intent)
     }
 
+
+    // TODO: Move into own component with rendering features
     private fun logNfcMessages(tag: Tag) {
         lifecycleScope.launch {
             nfcClient.fetchProfile(tag)
