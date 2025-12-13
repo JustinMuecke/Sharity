@@ -4,10 +4,11 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "users")
-data class User(
-    @PrimaryKey val userID: Int,
+@Entity(tableName = "connections")
+data class Connection(
+    @PrimaryKey @ColumnInfo(name = "connection_id") val connectionID: Int,
     @ColumnInfo(name = "name") val username: String,
+    @ColumnInfo(name = "connection_uuid") val connectionUuid: String,
     @ColumnInfo(name = "tracks_sent") val tracksSent: Int,
     @ColumnInfo(name = "tracks_received") val tracksReceived: Int
 )
