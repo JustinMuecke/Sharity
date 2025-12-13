@@ -1,21 +1,15 @@
 package com.example.sharity.ui.feature.peersongs
 
 import androidx.lifecycle.ViewModel
-import androidx.room.util.copy
 import com.example.sharity.domain.model.Track
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-
-
-data class Track(
-    val contentUri: String,
-    val title: String,
-    val artist: String?,
-    val album: String?,
-    val duration: Long,
-    val releaseYear: Int?
+data class PeerSongsUiState(
+    val peerName: String = "Nearby User",
+    val tracks: List<Track> = emptyList(),
+    val selectedTrackUris: Set<String> = emptySet()
 )
 
 class PeerSongsViewModel : ViewModel() {
@@ -58,22 +52,19 @@ class PeerSongsViewModel : ViewModel() {
         return current.tracks.filter { selected.contains(it.contentUri) }
     }
 
-    //TODO
     private fun placeholderTracks(): List<Track> {
         return listOf(
             Track(
                 contentUri = "peer://track/1",
                 title = "Midnight Echoes",
                 artist = "Demo Artist",
-                album = null,
-                duration = 180_000L,      // 3 minutes
+                duration = 180_000L,
                 releaseYear = 2023
             ),
             Track(
                 contentUri = "peer://track/2",
                 title = "Lavender Lights",
                 artist = "Demo Artist",
-                album = null,
                 duration = 210_000L,
                 releaseYear = 2022
             ),
@@ -81,7 +72,6 @@ class PeerSongsViewModel : ViewModel() {
                 contentUri = "peer://track/3",
                 title = "Neon Strings",
                 artist = "Demo Artist",
-                album = null,
                 duration = 195_000L,
                 releaseYear = 2021
             ),
@@ -89,12 +79,9 @@ class PeerSongsViewModel : ViewModel() {
                 contentUri = "peer://track/4",
                 title = "Bassline Boulevard",
                 artist = "Demo Artist",
-                album = null,
                 duration = 225_000L,
                 releaseYear = 2020
             )
         )
     }
 }
-
-annotation class PeerSongsUiState

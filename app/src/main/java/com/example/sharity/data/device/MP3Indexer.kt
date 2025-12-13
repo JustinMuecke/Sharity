@@ -66,10 +66,10 @@ class MP3Indexer(
 
                 val track = Track(
                     contentUri = uri.toString(),
-                    duration = duration,
                     title = title,
                     artist = artist,
                     releaseYear = year,
+                    duration = duration
                 )
 
                 tracks.insertAll(track)

@@ -21,6 +21,11 @@ import androidx.compose.ui.unit.dp
 import com.example.sharity.ui.theme.DustyPurple
 import com.example.sharity.ui.theme.GrapeGlimmer
 
+
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+
+
 data class PeerSummary(
     val displayName: String,
     val songs: Int,
@@ -90,11 +95,17 @@ fun PeerMiniProfileOverlay(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    Text(
-                        text = "Tap to view songs",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = GrapeGlimmer
-                    )
+                    Button(
+                        onClick = onOpenPeer,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = GrapeGlimmer)
+                    ) {
+                        Text(
+                            text = "View songs",
+                            color = Color.Black
+                        )
+                    }
+
                 }
             }
         }
