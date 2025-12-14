@@ -227,6 +227,7 @@ class MainActivity : ComponentActivity() {
                             AllSongsView(
                                 viewModel = allSongsViewModel,
                                 modifier = Modifier.fillMaxSize(),
+                                paddingValues = innerPadding,
                             )
                         }
                         composable(RootDestinations.PROFILE) {
