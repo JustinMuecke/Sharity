@@ -9,10 +9,15 @@ data class HandshakeData(
 )
 
 fun parseHandshake(bytes: ByteArray): HandshakeData {
-    val parts = bytes.toString(Charsets.UTF_8).split(",")
+    val raw = bytes.toString(Charsets.UTF_8).trim()
+    val parts = raw.split(",")
+
+    require(parts.size == 5) {
+        "Invalid handshake payload: '$raw'"
+    }
 
     return HandshakeData(
-        peerUuid = parts[0],
+        peerUuid = parts[0].ifBlank { null },
         name = parts[1],
         token = parts[2],
         port = parts[3].toInt(),

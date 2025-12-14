@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import android.nfc.Tag
 import android.os.Build
 import android.os.Bundle
@@ -45,10 +46,14 @@ import com.example.sharity.data.local.FileTransferService
 import com.example.sharity.data.local.HandshakeData
 import com.example.sharity.data.device.NfcPayloadCache
 import com.example.sharity.data.local.parseHandshake
+import com.example.sharity.data.wrapper.NfcBlocker
+import com.example.sharity.domain.model.Connection
 import com.example.sharity.domain.model.toNfcPayload
 import com.example.sharity.ui.feature.peersongs.PeerSongsScreen
 import com.example.sharity.ui.feature.peersongs.PeerSongsViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 
 
@@ -79,14 +84,14 @@ class MainActivity : ComponentActivity() {
             IntentFilter(NfcProfileService.ACTION_NFC_TRANSACTION_COMPLETE)
         )
 
+        val exoPlayer = ExoPlayer.Builder(applicationContext).build()
+
+        initPermissions()
+        initAppData()
+
         nfcController = NfcController(this) { tag ->
             logNfcMessages(tag)
         }
-
-        val exoPlayer = ExoPlayer.Builder(applicationContext).build()
-
-        initAppData()
-
 
         setContent {
             SharityTheme {
@@ -167,6 +172,15 @@ class MainActivity : ComponentActivity() {
         nfcController.onNewIntent(intent)
     }
 
+    private fun onTransferFinished() {
+        Log.d("TRANSFER", "Cleaning up after transfer")
+
+        if (::wifiHandshake.isInitialized) {
+            wifiHandshake.disconnect()
+        }
+    }
+
+
     override fun onDestroy() {
         super.onDestroy()
         LocalBroadcastManager.getInstance(this).unregisterReceiver(nfcTransactionReceiver)
@@ -180,24 +194,29 @@ class MainActivity : ComponentActivity() {
     private fun initAppData() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val db = applicationContext.db()
-                val repo = applicationContext.userRepo()
+                val db = db()
+                val repo = userRepo()
 
-                myUuid = db.userInfoDao()
-                    .getValue("uuid")
-                    ?: Uuid.random().toHexString().also {
-                        db.userInfoDao().createValueIfEmpty(it)
+                myUuid = db.userInfoDao().getValue("uuid")
+                    ?: Uuid.random().toHexString().also { newUuid ->
+                        db.userInfoDao().createUuidIfEmpty(newUuid)
                     }
 
-                MP3Indexer(
-                    applicationContext,
-                    db,
-                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-                ).index()
+
+                val indexer = MP3Indexer(applicationContext, db(), MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
+                indexer.index()
 
                 NfcPayloadCache.update(
                     repo.getProfile().toNfcPayload()
                 )
+
+                val payload = repo.getProfile().toNfcPayload()
+
+                require(payload.isNotEmpty()) {
+                    "NFC payload is empty!"
+                }
+
+                NfcPayloadCache.update(payload)
 
                 Log.d("INIT", "My UUID = $myUuid")
 
@@ -238,12 +257,18 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun logNfcMessages(tag: Tag) {
-        lifecycleScope.launch {
+        lifecycleScope.launch(Dispatchers.IO) {
+            if (!NfcBlocker.canStartHandshake()) {
+                Log.d("NFC", "Handshake blocked (cooldown)")
+                return@launch
+            }
+
+
             nfcClient.fetchProfile(tag)
                 .onSuccess { bytes ->
+                    NfcBlocker.markHandshakeStarted()
                     val handshake = parseHandshake(bytes)
                     logUuidState("NFC CLIENT (RESPONDER)", myUuid, handshake.peerUuid)
-
 
                     wifiHandshake = WifiDirectHandshake(this@MainActivity, myUuid) {
                         hostAddress, port, isGroupOwner ->
@@ -257,33 +282,66 @@ class MainActivity : ComponentActivity() {
                 }
         }
     }
-    private fun handleFileTransfer(hostAddress: String, port: Int, isGroupOwner: Boolean) {
+    private fun handleFileTransfer(
+        hostAddress: String,
+        port: Int,
+        isGroupOwner: Boolean
+    ) {
         lifecycleScope.launch(Dispatchers.IO) {
-            val fileTransfer = FileTransferService()
 
-            if (isGroupOwner) {
-                fileTransfer.receiveFile(port, filesDir
-                )
-                    .onSuccess { receivedFile ->
-                        Log.d("TRANSFER", "File received: ${receivedFile.absolutePath}")
-                    }
-                    .onFailure { exception ->
-                        Log.e("TRANSFER", "Failed to receive file", exception)
-                    }
-            } else {
-                val fileToSend = File(filesDir, "example.mp3")
-                if (!fileToSend.exists()) {
-                    fileToSend.writeText("Test file content - UUID: $myUuid")
-                }
+            handleFileTransferOnce(
+                hostAddress,
+                8888,
+                isGroupOwner,
+                sendFiles = !isGroupOwner
+            )
 
-                kotlinx.coroutines.delay(1000)
+            delay(500)
+            handleFileTransferOnce(
+                hostAddress,
+                8889,
+                isGroupOwner,
+                sendFiles = isGroupOwner
+            )
 
-                fileTransfer.sendFile(hostAddress, port, fileToSend)
-                    .onSuccess { Log.d("TRANSFER", "File sent successfully!") }
-                    .onFailure { Log.e("TRANSFER", "Failed to send file", it) }
+            val indexer = MP3Indexer(applicationContext, db(), MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
+            indexer.index()
+            Log.d("TRANSFER", "TRANSFER DONE")
+            onTransferFinished()
+        }
+    }
+
+
+    private suspend fun handleFileTransferOnce(
+        hostAddress: String,
+        port: Int,
+        isGroupOwner: Boolean,
+        sendFiles: Boolean
+    ) {
+        val fileTransfer = FileTransferService()
+
+        if (sendFiles) {
+            val filesToSend = db().trackDao().getAll()?.map { track ->
+                applicationContext.uriToTempFile(Uri.parse(track.contentUri))
+            }
+
+            if (filesToSend == null || filesToSend.isEmpty()) {
+                return
+            }
+
+            fileTransfer.sendFiles(hostAddress, port, filesToSend)
+            filesToSend.forEach { it.delete() }
+        } else {
+            val result = withTimeoutOrNull(2_000) {
+                fileTransfer.receiveFiles(port, filesDir)
+            }
+
+            if (result == null) {
+                Log.d("TRANSFER", "Receive timed out after 2s")
             }
         }
     }
+
 
     private fun initPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -298,6 +356,26 @@ class MainActivity : ComponentActivity() {
             )
         }
     }
+
+    fun Context.uriToTempFile(uri: Uri): File {
+        val inputStream = contentResolver.openInputStream(uri)
+            ?: throw IllegalStateException("Cannot open URI: $uri")
+
+        val tempFile = File.createTempFile(
+            "share_",
+            ".mp3",
+            cacheDir
+        )
+
+        inputStream.use { input ->
+            tempFile.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
+
+        return tempFile
+    }
+
 }
 
 private fun logUuidState(

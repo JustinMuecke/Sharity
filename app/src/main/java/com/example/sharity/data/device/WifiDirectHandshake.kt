@@ -218,16 +218,21 @@ class WifiDirectHandshake(
     }
 
     fun disconnect() {
-        manager.removeGroup(channel, object : WifiP2pManager.ActionListener {
-            override fun onSuccess() {
-                Log.d("WIFI", "Group removed successfully")
-            }
+        try {
+            manager.removeGroup(channel, object : WifiP2pManager.ActionListener {
+                override fun onSuccess() {
+                    Log.d("WIFI", "WiFi P2P group removed")
+                }
 
-            override fun onFailure(reason: Int) {
-                Log.e("WIFI", "Failed to remove group: $reason")
-            }
-        })
+                override fun onFailure(reason: Int) {
+                    Log.w("WIFI", "Failed to remove group: $reason")
+                }
+            })
+        } catch (e: Exception) {
+            Log.e("WIFI", "Disconnect failed", e)
+        }
     }
+
 
     fun unregister() {
         try {

@@ -84,7 +84,7 @@ class MP3Indexer(
         val trackDao = db.trackDao();
         val tracks = trackDao.getAll();
 
-        tracks.forEach { track ->
+        tracks?.forEach { track ->
             try {
                 val stream = context.contentResolver.openInputStream(
                     Uri.parse(track.contentUri)
