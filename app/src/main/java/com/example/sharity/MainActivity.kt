@@ -61,6 +61,7 @@ import com.example.sharity.ui.feature.playlistselection.PlaylistSelectionScreen
 import com.example.sharity.ui.feature.playlistselection.PlaylistSelectionViewModel
 import androidx.compose.runtime.collectAsState
 import com.example.sharity.data.wrapper.Database
+import com.example.sharity.ui.component.navBar.NfcIsland
 import com.example.sharity.ui.feature.peersongs.PeerSongsScreen
 import com.example.sharity.ui.feature.peersongs.PeerSongsViewModel
 
@@ -82,7 +83,6 @@ object RootDestinations {
 
 
 
-enum class RootScreen { HOME, PROFILE, PEER_SONGS }
 
 // FIXME: Move to viewmodel, to prevent Memoryleak
 private lateinit var nfcController: NfcController
@@ -278,6 +278,29 @@ class MainActivity : ComponentActivity() {
                                 },
                                 modifier = Modifier.padding(innerPadding)
                             )
+                        }
+                        composable(route= RootDestinations.NFC){
+                            val peerSongsViewModel = viewModel<PeerSongsViewModel>()
+                            val state = peerSongsViewModel.uiState.collectAsState().value
+
+                            PeerSongsScreen(
+                                peerName = state.peerName,
+                                tracks = state.tracks,
+                                selectedTrackUris = state.selectedTrackUris,
+                                onToggleSelect = { track -> peerSongsViewModel.toggleSelect(track) },
+                                onCancel = {
+                                    peerSongsViewModel.clearSelection()
+                                    navController.navigateUp()
+                                },
+                                onFinished = {
+                                    // TODO: next step = navigate to Trade/Confirm screen
+                                    // For now: keep it simple and go back home
+                                    val selected = peerSongsViewModel.getSelectedTracks()
+                                    // later: pass selected to next screen
+                                    peerSongsViewModel.clearSelection()
+                                    navController.navigateUp()
+                                },
+                                modifier = Modifier.padding(innerPadding))
                         }
 
                     }

@@ -33,16 +33,7 @@ fun PeerSongsScreen(
         color = MaterialTheme.colorScheme.background
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-
-            NavBar(
-                showBack = true,
-                onBackClick = onCancel,
-                onNfcClick = { /* no-op on this screen */ },
-                onProfileClick = { /* no-op */ },
-                modifier = Modifier.align(Alignment.TopCenter)
-            )
-
-            Column(
+                        Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(top = 72.dp)
