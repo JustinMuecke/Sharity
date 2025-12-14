@@ -6,9 +6,9 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "connections")
 data class Connection(
-    @PrimaryKey @ColumnInfo(name = "connection_id") val connectionID: Int,
+    @PrimaryKey @ColumnInfo(name = "connection_id") val connectionID: String,
     @ColumnInfo(name = "name") val username: String,
-    @ColumnInfo(name = "connection_uuid") val connectionUuid: String,
+    @ColumnInfo(name = "connection_uuid") val connectionUuid: String?,
     @ColumnInfo(name = "tracks_sent") val tracksSent: Int,
     @ColumnInfo(name = "tracks_received") val tracksReceived: Int
 )

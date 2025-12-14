@@ -22,7 +22,7 @@ import com.example.sharity.domain.usecase.UserInfoDao
         Connection::class,
         UserInfo::class,
         ],
-    version = 12)
+    version = 15)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun trackDao(): TrackDao
     abstract fun playlistDao(): PlaylistDao

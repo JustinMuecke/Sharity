@@ -9,6 +9,8 @@ import com.example.sharity.data.local.AppDatabase
 import com.example.sharity.domain.model.Track
 import java.io.FileNotFoundException
 
+private val TAG = "MP3_INDEXER"
+
 class MP3Indexer(
     val context: Context,
     val db: AppDatabase,
@@ -32,9 +34,10 @@ class MP3Indexer(
                 MediaStore.Audio.Media.TITLE,
                 MediaStore.Audio.Media.ARTIST,
                 MediaStore.Audio.Media.YEAR,
+                MediaStore.Audio.Media.RELATIVE_PATH,
             ),
-            "",
-            arrayOf(),
+            "${MediaStore.Audio.Media.RELATIVE_PATH} LIKE ?",
+            arrayOf("Music/%"),
             "",
         )
 
@@ -47,6 +50,7 @@ class MP3Indexer(
             val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
             val yearColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR)
 
+            Log.d(TAG, "Indexing results:")
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
                 val uri = ContentUris.withAppendedId(uri, id)
@@ -56,13 +60,12 @@ class MP3Indexer(
                 val artist = cursor.getString(artistColumn)
                 val year = cursor.getInt(yearColumn)
 
-                Log.i("INFO", "ID: $id")
-                Log.i("INFO", "URI: $uri")
-                Log.i("INFO", "Duration: $duration")
-                Log.i("INFO", "Title: $title")
-                Log.i("INFO", "Artist: $artist")
-                Log.i("INFO", "Year: $year")
-                Log.i("INFO", "")
+                Log.d(TAG, "ID: $id, URI: \"$uri\"")
+                Log.d(TAG, "Duration: ${duration}ms")
+                Log.d(TAG, "Title: \"$title\"")
+                Log.d(TAG, "Artist: \"$artist\"")
+                Log.d(TAG, "Year: $year")
+                Log.d(TAG, "")
 
                 val track = Track(
                     contentUri = uri.toString(),
@@ -84,7 +87,7 @@ class MP3Indexer(
         val trackDao = db.trackDao();
         val tracks = trackDao.getAll();
 
-        tracks.forEach { track ->
+        tracks?.forEach { track ->
             try {
                 val stream = context.contentResolver.openInputStream(
                     Uri.parse(track.contentUri)
@@ -96,7 +99,7 @@ class MP3Indexer(
                 stream.close()
             } catch (e: FileNotFoundException) {
                 // File does not exist, remove from index
-                Log.i("INFO", "Delete ${track.contentUri}")
+                Log.d(TAG, "Delete ${track.contentUri}")
                 trackDao.delete(track)
             }
         }

@@ -21,7 +21,7 @@ interface TrackDao {
 
 
     @Query("SELECT * FROM tracks")
-    fun getAll() : List<Track>
+    fun getAll() : List<Track>?
     @Query("SELECT * FROM tracks")
     suspend fun getAllAsync() : List<Track>
 
