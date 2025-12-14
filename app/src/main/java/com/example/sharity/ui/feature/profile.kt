@@ -112,9 +112,9 @@ fun ProfileScreen(
 
     val stats = UserStats(songs = 42, sent = 10, received = 5)
     val badges = listOf(
-        Badge("First Share"),
-        Badge("10 Songs"),
-        Badge("Night Listener")
+        Badge("First Share", Icons.Default.Share),
+        Badge("10 Songs", Icons.Default.Share),
+        Badge("Night Listener", Icons.Default.Share)
     )
 
     //val userNameState = remember { mutableStateOf("Your Name") }

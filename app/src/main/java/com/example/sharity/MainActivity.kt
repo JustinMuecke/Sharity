@@ -235,7 +235,7 @@ class MainActivity : ComponentActivity() {
                         composable(RootDestinations.LANDING) {
                             // @Justin: auslagern?
                             com.example.sharity.ui.feature.setupProfile.LandingScreen(
-                                db = db,
+                                db = db(),
                                 onGoToSetup = {
                                     navController.navigate(RootDestinations.PROFILE_SETUP)
                                 },
@@ -253,7 +253,7 @@ class MainActivity : ComponentActivity() {
                         composable(RootDestinations.PROFILE_SETUP) {
                             // @Justin: auslagern?
                             com.example.sharity.ui.feature.setupProfile.ProfileSetupScreen(
-                                db = db,
+                                db = db(),
                                 paddingValues = innerPadding,
                                 onContinue = {
                                     navController.navigate(RootDestinations.HOME) {
@@ -295,7 +295,7 @@ class MainActivity : ComponentActivity() {
                         composable(RootDestinations.PROFILE) {
                             ProfileScreen(
                                 paddingValues = innerPadding,
-                                db = db,
+                                db = db(),
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
@@ -505,11 +505,8 @@ class MainActivity : ComponentActivity() {
                 val db = db()
                 val repo = userRepo()
 
+                db.userInfoDao().createUuidIfEmpty(Uuid.random().toHexString())
                 myUuid = db.userInfoDao().getValue("uuid")
-                    ?: Uuid.random().toHexString().also { newUuid ->
-                        db.userInfoDao().createUuidIfEmpty(newUuid)
-                    }
-
 
                 val indexer = MP3Indexer(applicationContext, db(), MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
                 indexer.index()
@@ -668,15 +665,53 @@ class MainActivity : ComponentActivity() {
     private fun initPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestPermissions(
-                arrayOf(android.Manifest.permission.NEARBY_WIFI_DEVICES),
+                arrayOf(
+                    android.Manifest.permission.NFC,
+                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                    android.Manifest.permission.INTERNET,
+                    android.Manifest.permission.ACCESS_WIFI_STATE,
+                    android.Manifest.permission.CHANGE_WIFI_STATE,
+                    android.Manifest.permission.NEARBY_WIFI_DEVICES,
+                    android.Manifest.permission.READ_EXTERNAL_STORAGE,
+                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    android.Manifest.permission.MANAGE_EXTERNAL_STORAGE,
+                    android.Manifest.permission.READ_MEDIA_AUDIO
+                ),
                 1001
             )
         } else {
             requestPermissions(
-                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
+                arrayOf(
+                    android.Manifest.permission.NFC,
+                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                    android.Manifest.permission.INTERNET,
+                    android.Manifest.permission.ACCESS_WIFI_STATE,
+                    android.Manifest.permission.CHANGE_WIFI_STATE,
+                    //android.Manifest.permission.NEARBY_WIFI_DEVICES,
+                    android.Manifest.permission.READ_EXTERNAL_STORAGE,
+                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    android.Manifest.permission.MANAGE_EXTERNAL_STORAGE,
+                    android.Manifest.permission.READ_MEDIA_AUDIO
+                ),
                 1001
             )
         }
+
+        requestPermissions(
+            arrayOf(
+                android.Manifest.permission.NFC,
+                android.Manifest.permission.ACCESS_FINE_LOCATION,
+                android.Manifest.permission.INTERNET,
+                android.Manifest.permission.ACCESS_WIFI_STATE,
+                android.Manifest.permission.CHANGE_WIFI_STATE,
+                android.Manifest.permission.NEARBY_WIFI_DEVICES,
+                android.Manifest.permission.READ_EXTERNAL_STORAGE,
+                android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                android.Manifest.permission.MANAGE_EXTERNAL_STORAGE,
+                android.Manifest.permission.READ_MEDIA_AUDIO,
+            ),
+            1002,
+        )
     }
 
     fun Context.uriToTempFile(uri: Uri): File {
