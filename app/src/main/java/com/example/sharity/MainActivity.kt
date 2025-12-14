@@ -36,6 +36,7 @@ import com.example.sharity.ui.component.AudioControl
 import com.example.sharity.ui.component.navBar.NavBar
 import com.example.sharity.ui.component.playlist.SongSelectorModalContent // Assuming this is correct
 import com.example.sharity.ui.component.share.PeerMiniProfileOverlay
+import com.example.sharity.ui.component.share.PeerSummary
 import com.example.sharity.ui.feature.ProfileScreen
 import com.example.sharity.ui.feature.allsongsscreen.AllSongsView
 import com.example.sharity.ui.feature.allsongsscreen.AllSongsViewModel
@@ -294,14 +295,16 @@ class MainActivity : ComponentActivity() {
                             //)
                             val peerSongsViewModel = viewModel<PeerSongsViewModel>()
                             val state = peerSongsViewModel.uiState.collectAsState().value
+                            val showPeerOverlay = rememberSaveable { mutableStateOf(false) }
+                            val currentPeer = remember { mutableStateOf<PeerSummary?>(null) }
 
                             PeerMiniProfileOverlay(
-                                visible = state.showPeerOverlay,
-                                peer = state.peerSummary,
-                                onDismiss = { peerSongsViewModel.dismissPeerOverlay() },
+                                visible = showPeerOverlay.value,
+                                peer = currentPeer.value,
+                                onDismiss = { showPeerOverlay.value = false },
                                 onOpenPeer = {
-                                    peerSongsViewModel.dismissPeerOverlay()
-                                    navController.navigate(RootDestinations.PEER) // oder direkt PeerSongsScreen Route
+                                    showPeerOverlay.value = false
+                                    navController.navigate(RootDestinations.PEER)
                                 },
                                 modifier = Modifier.fillMaxSize()
                             )

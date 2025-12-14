@@ -75,7 +75,11 @@ fun NavBar(
                 modifier = Modifier.weight(1f),
                 contentAlignment = Alignment.Center
             ) {
-                NfcIsland(onClick = onNfcClick)
+                NfcIsland(
+                    onClick = onNfcClick,
+                    enabled = false,
+                    text = "Share"
+                )
             }
 
             // Right: Profile Button
