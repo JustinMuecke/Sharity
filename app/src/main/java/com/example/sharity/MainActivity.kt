@@ -30,7 +30,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.exoplayer.ExoPlayer
 import com.example.sharity.data.device.MP3Indexer
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -38,21 +37,18 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.sharity.data.device.NfcClient
-import com.example.sharity.data.local.PrimaryUser
+import com.example.sharity.data.wrapper.db
+import com.example.sharity.data.wrapper.userRepo
 import com.example.sharity.data.wrapper.NfcController
 import com.example.sharity.ui.feature.ProfileScreen
 import com.example.sharity.ui.feature.homescreen.HomeScreen
-import com.example.sharity.ui.feature.homescreen.HomeScreenViewModel
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import com.example.sharity.ui.theme.SharityTheme
 import kotlinx.coroutines.launch
 
 import com.example.sharity.ui.component.AudioControl
-import com.example.sharity.ui.component.navBar.NavBar
-import kotlinx.coroutines.launch
-import com.example.sharity.ui.theme.SharityTheme
-import com.example.sharity.ui.feature.ProfileScreen
+
 import com.example.sharity.ui.feature.allsongsscreen.AllSongsView
 import com.example.sharity.ui.feature.allsongsscreen.AllSongsViewModel
 import com.example.sharity.ui.feature.homescreen.HomeScreen
@@ -97,16 +93,20 @@ class MainActivity : ComponentActivity() {
         nfcController = NfcController(this) { tag ->
             logNfcMessages(tag)
         }
-        val db = Database.createDatabaseConnector(this.applicationContext)
+        val userRepo = this.applicationContext.userRepo()
+        val db = this.applicationContext.db()
         val exoPlayer = ExoPlayer.Builder(applicationContext).build()
 
         Thread {
             try {
-                db.userInfoDao().createUuidIfEmpty(Uuid.random().toHexString())
-                PrimaryUser.init(db, "user1", "some_font")
-                val indexer =
-                    MP3Indexer(applicationContext, db, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
 
+                db.userInfoDao().createValueIfEmpty(Uuid.random().toHexString())
+
+                val indexer = MP3Indexer(
+                    applicationContext,
+                    db,
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+                )
                 indexer.index()
             } catch (e: Exception) {
                 Log.e("ERROR", "MP3Indexer failed", e)

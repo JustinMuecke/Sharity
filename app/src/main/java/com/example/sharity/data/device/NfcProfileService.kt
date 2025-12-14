@@ -3,7 +3,9 @@ package com.example.sharity.data.device
 import android.nfc.cardemulation.HostApduService
 import android.os.Bundle
 import android.util.Log
-import com.example.sharity.data.local.PrimaryUser
+import com.example.sharity.data.wrapper.userRepo
+import com.example.sharity.domain.model.toNfcPayload
+import kotlinx.coroutines.runBlocking
 
 class NfcProfileService : HostApduService() {
     private lateinit var profile: ByteArray
@@ -33,7 +35,9 @@ class NfcProfileService : HostApduService() {
         return when (commandApdu[0]) {
             0x01.toByte() -> {
                 Log.d("NfcProfileServer", "REQUEST PROFILE")
-                profile = PrimaryUser.getConcatenatedData()
+                profile = runBlocking {
+                    userRepo().getProfile().toNfcPayload()
+                }
                 offset = 0
                 nextChunk()
             }

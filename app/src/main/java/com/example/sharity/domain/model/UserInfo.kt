@@ -2,9 +2,14 @@ package com.example.sharity.domain.model
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "userInfos")
+@Entity(
+    tableName = "userInfos",
+    indices = [
+        Index(value = ["key"], unique = true)
+    ])
 data class UserInfo(
     @PrimaryKey(true)
     @ColumnInfo(name = "stat_id")
