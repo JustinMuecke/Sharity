@@ -258,13 +258,16 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.fillMaxSize(),
                             )
                         }
+
                         composable(RootDestinations.PROFILE) {
-                            // Create your profile screen here
                             ProfileScreen(
                                 paddingValues = innerPadding,
+                                db = db,
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
+
+
                         // PLAYLIST SELECTION
                         composable(RootDestinations.PLAYLISTS) {
                             PlaylistSelectionScreen(

@@ -66,9 +66,6 @@ fun ProfileSetupScreen(
             )
 
 
-            getValue
-            Insert
-            User Info
             // Foreground content
             Column(
                 modifier = Modifier
@@ -148,16 +145,14 @@ fun ProfileSetupScreen(
                     onClick = {
                         val finalName = sanitizeDisplayName(displayName)
                         val finalBio = sanitizeBioText(bio)
-                        val finalAvatar = avatar.name // "ROCK"/"POP"/"JAZZ"
 
                         isSaving = true
                         scope.launch {
                             runCatching {
                                 withContext(Dispatchers.IO) {
                                     val dao = db.userInfoDao()
-                                    dao.upsert("display_name", finalName)
+                                    dao.upsert("name", finalName)
                                     dao.upsert("bio", finalBio)
-                                    dao.upsert("avatar", finalAvatar)
                                     dao.upsert("profile_complete", "true")
                                 }
                             }.onSuccess {
@@ -169,24 +164,18 @@ fun ProfileSetupScreen(
                     enabled = canContinue,
                     modifier = Modifier.align(Alignment.End)
                 ) {
-                    if (isSaving) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                    }
                     Text("Continue")
                 }
-            }
 
-            // Avatar picker dialog
-            if (isAvatarDialogOpen) {
+
+                // Avatar picker dialog
+                /*if (isAvatarDialogOpen) {
                 AvatarPickerDialog(
                     current = avatar,
                     onSelect = { selected -> avatar = selected },
                     onDismiss = { isAvatarDialogOpen = false }
                 )
+            }*/
             }
         }
     }

@@ -35,6 +35,7 @@ interface UserInfoDao {
             WHERE `key` = :value
             LIMIT 1
         """)
+    // for get and set part - if default
     fun getValue(value: String) : String
 
     @Query("""
@@ -42,4 +43,12 @@ interface UserInfoDao {
             VALUES (:key, :value)
         """)
     fun upsert(key: String, value: String)
+
+    @Query("""
+    SELECT value
+    FROM userInfos
+    WHERE `key` = :key
+    LIMIT 1
+""")
+    fun getValueNullable(key: String): String?
 }

@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sharity.R
+import com.example.sharity.domain.usecase.UserInfoDao
 import com.example.sharity.ui.component.navBar.NavBar
 import com.example.sharity.ui.component.share.PeerMiniProfileOverlay
 import com.example.sharity.ui.component.share.PeerSummary
@@ -40,6 +41,15 @@ import com.example.sharity.ui.theme.DarkBlackberry
 import com.example.sharity.ui.theme.DustyPurple
 import com.example.sharity.ui.theme.GrapeGlimmer
 import com.example.sharity.ui.theme.SheerLilac
+
+
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import com.example.sharity.data.local.AppDatabase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
+
 
 data class UserStats(
     val songs: Int,
@@ -57,12 +67,31 @@ enum class ProfileImageOption(@DrawableRes val resId: Int) {
     JAZZ(R.drawable.vinyl)
 }
 
+
 @Composable
 fun ProfileScreen(
     modifier: Modifier = Modifier,
     paddingValues : PaddingValues,
+    db: AppDatabase
 ) {
+    val scope = rememberCoroutineScope()
+
+    val userNameState = remember { mutableStateOf("Your Name") }
     val bioState = remember { mutableStateOf("Tell us about your music taste, last concert, etc.") }
+    val profileImageState = remember { mutableStateOf(ProfileImageOption.ROCK)}
+
+    // editing
+    val isEditingName = remember { mutableStateOf(false) }
+    val isAvatarDialogOpen = remember { mutableStateOf(false) }
+    val isEditingBio = remember { mutableStateOf(false) }
+    //val bioState = remember { mutableStateOf("Tell us about your music taste, last concert, etc.") }
+
+
+
+
+    val showPeerOverlay = remember { mutableStateOf(false) }
+    val onShareClick = { showPeerOverlay.value = true }
+
     val stats = UserStats(songs = 42, sent = 10, received = 5)
     val badges = listOf(
         Badge("First Share"),
@@ -70,16 +99,8 @@ fun ProfileScreen(
         Badge("Night Listener")
     )
 
-    val userNameState = remember { mutableStateOf("Your Name") }
-    val isEditingName = remember { mutableStateOf(false) }
-
-    val profileImageState = remember { mutableStateOf(ProfileImageOption.ROCK) }
-    val isAvatarDialogOpen = remember { mutableStateOf(false) }
-
-    val isEditingBio = remember { mutableStateOf(false) }
-
-    val showPeerOverlay = remember { mutableStateOf(false) }
-    val onShareClick = { showPeerOverlay.value = true }
+    //val userNameState = remember { mutableStateOf("Your Name") }
+    //val profileImageState = remember { mutableStateOf(ProfileImageOption.ROCK) }
 
     val peer = remember {
         PeerSummary(
@@ -88,6 +109,24 @@ fun ProfileScreen(
             sent = 12,
             received = 9
         )
+    }
+    //val scope = rememberCoroutineScope()
+    LaunchedEffect(Unit) {
+        val (name, bio, avatar) = withContext(Dispatchers.IO) {
+            val dao = db.userInfoDao()
+            val n = dao.getValueNullable("name")
+            val b = dao.getValueNullable("bio")
+            val a = dao.getValueNullable("avatar")
+            Triple(n, b, a)
+        }
+
+        if (!name.isNullOrBlank()) userNameState.value = name
+        if (!bio.isNullOrBlank()) bioState.value = bio
+
+        if (!avatar.isNullOrBlank()) {
+            profileImageState.value = runCatching { ProfileImageOption.valueOf(avatar) }
+                .getOrDefault(ProfileImageOption.ROCK)
+        }
     }
 
     Surface(
@@ -106,11 +145,19 @@ fun ProfileScreen(
                     nameState = userNameState,
                     isEditing = isEditingName.value,
                     onStartEdit = { isEditingName.value = true },
+                    // save in db
                     onDone = { newName ->
                         val sanitized = sanitizeDisplayName(newName)
                         userNameState.value = sanitized
                         isEditingName.value = false
+
+                        scope.launch {
+                            withContext(Dispatchers.IO) {
+                                db.userInfoDao().upsert("name", sanitized)
+                            }
+                        }
                     },
+
                     onCancel = { isEditingName.value = false },
                     profileImage = profileImageState.value,
                     onAvatarClick = { isAvatarDialogOpen.value = true },
@@ -123,11 +170,19 @@ fun ProfileScreen(
                     bioState = bioState,
                     isEditing = isEditingBio.value,
                     onStartEdit = { isEditingBio.value = true },
+                    //db
                     onDone = { newBio ->
                         val sanitized = sanitizeBioText(newBio)
                         bioState.value = sanitized
                         isEditingBio.value = false
+
+                        scope.launch {
+                            withContext(Dispatchers.IO) {
+                                db.userInfoDao().upsert("bio", sanitized)
+                            }
+                        }
                     },
+
                     onCancel = { isEditingBio.value = false }
                 )
 
@@ -140,9 +195,17 @@ fun ProfileScreen(
                     current = profileImageState.value,
                     onSelect = { selected ->
                         profileImageState.value = selected
+
+                        scope.launch {
+                            withContext(Dispatchers.IO) {
+                                db.userInfoDao().upsert("avatar", selected.name)
+                            }
+                        }
                     },
+
                     onDismiss = { isAvatarDialogOpen.value = false }
                 )
+
             }
         }
     }
@@ -293,6 +356,7 @@ fun AvatarPickerDialog(
     onDismiss: () -> Unit
 ) {
     val tempSelection = remember { mutableStateOf(current) }
+
 
     AlertDialog(
         onDismissRequest = onDismiss,
