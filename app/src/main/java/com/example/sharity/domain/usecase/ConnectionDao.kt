@@ -36,6 +36,9 @@ interface ConnectionDao {
            """)
     fun getDistinctByMax() : List<NameStatsJunction>
 
+    @Query("SELECT COUNT(*) FROM connections")
+    fun countConnections(): Int
+
     companion object
 
 }
