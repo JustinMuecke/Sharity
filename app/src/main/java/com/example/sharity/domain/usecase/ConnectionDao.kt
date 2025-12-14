@@ -36,4 +36,6 @@ interface ConnectionDao {
            """)
     fun getDistinctByMax() : List<NameStatsJunction>
 
+    companion object
+
 }

@@ -181,7 +181,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun QuickActionCard(
+fun QuickActionCard(
     title: String,
     icon: ImageVector,
     onClick: () -> Unit,
