@@ -43,7 +43,6 @@ import com.example.sharity.data.local.AppDatabase
 import com.example.sharity.data.wrapper.db
 import com.example.sharity.data.wrapper.userRepo
 import com.example.sharity.data.wrapper.NfcController
-import com.example.sharity.domain.model.Connection
 import com.example.sharity.ui.component.AudioControl
 import com.example.sharity.ui.component.navBar.NavBar
 import com.example.sharity.ui.component.playlist.SongSelectorModalContent // Assuming this is correct
@@ -73,8 +72,6 @@ import com.example.sharity.data.wrapper.NfcBlocker
 import com.example.sharity.domain.model.Connection
 import com.example.sharity.domain.model.toNfcPayload
 import com.example.sharity.ui.feature.peersongs.PeerSongsScreen
-import com.example.sharity.ui.feature.peersongs.PeerSongsViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
@@ -90,8 +87,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.random.Random
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
+
 
 object RootDestinations {
     // ... (All your destination objects remain the same)
@@ -158,7 +154,7 @@ class MainActivity : ComponentActivity() {
                 factory = object : ViewModelProvider.Factory {
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         @Suppress("UNCHECKED_CAST")
-                        return AllSongsViewModel(db, exoPlayer) as T
+                        return AllSongsViewModel(db(), exoPlayer) as T
                     }
                 }
             )
@@ -166,7 +162,7 @@ class MainActivity : ComponentActivity() {
                 factory = object : ViewModelProvider.Factory {
                     override fun <T: ViewModel> create(modelClass: Class<T>):T {
                         @Suppress("UNCHECKED_CAST") // Added cast suppression for safety
-                        return PlaylistSelectionViewModel(db) as T
+                        return PlaylistSelectionViewModel(db()) as T
                     }
                 }
             )
@@ -212,7 +208,7 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(
                                 // Pass the required padding to the content's LazyColumn/Container
                                 paddingValues = innerPadding,
-                                db = db,
+                                db = db(),
                                 exoPlayer = exoPlayer,
                                 allSongsViewModel = allSongsViewModel,
                                 onProfileClick = { navController.navigate(RootDestinations.PROFILE) },
@@ -295,7 +291,7 @@ class MainActivity : ComponentActivity() {
                                 factory = object : ViewModelProvider.Factory {
                                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                                         @Suppress("UNCHECKED_CAST")
-                                        return FriendsViewModel(db) as T
+                                        return FriendsViewModel(db()) as T
                                     }
                                 }
                             )
@@ -311,7 +307,7 @@ class MainActivity : ComponentActivity() {
                                 factory = object : ViewModelProvider.Factory {
                                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                                         @Suppress("UNCHECKED_CAST")
-                                        return HistoryViewModel(db) as T
+                                        return HistoryViewModel(db()) as T
                                     }
                                 }
                             )
@@ -342,7 +338,7 @@ class MainActivity : ComponentActivity() {
                                 factory = object : ViewModelProvider.Factory {
                                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                                         @Suppress("UNCHECKED_CAST")
-                                        return PlaylistViewModel(db, playlistId) as T
+                                        return PlaylistViewModel(db(), playlistId) as T
                                     }
                                 }
                             )
@@ -638,7 +634,6 @@ private fun logUuidState(
     Log.d("UUID_TEST", "================================")
 }
     // ... (onResume, onPause, onNewIntent, logNfcMessages remain the same)
-}
 suspend fun generateTestConnections(db: AppDatabase) {
     withContext(Dispatchers.IO) {
         val connectionDao = db.connectionDao()
@@ -657,7 +652,7 @@ suspend fun generateTestConnections(db: AppDatabase) {
 
             connections.add(
                 Connection(
-                    connectionID = i,
+                    connectionID = i.toString(),
                     username = randomName,
                     connectionUuid = uuid,
                     tracksSent = Random.nextInt(0, 20),
