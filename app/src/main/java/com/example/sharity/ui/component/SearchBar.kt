@@ -18,8 +18,7 @@ import com.example.sharity.ui.feature.allsongsscreen.AllSongsViewModel
 @Composable
 fun SearchBar(viewModel : AllSongsViewModel){
     // Collect the search query state from the ViewModel
-    val currentQuery by viewModel.searchQuery.collectAsState()
-
+    val currentQuery by viewModel.currentQuery.collectAsState()
     OutlinedTextField(
         value = currentQuery,
         onValueChange = { newQuery ->

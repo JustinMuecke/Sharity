@@ -66,189 +66,195 @@ fun AudioControl(viewModel : AllSongsViewModel){
     val sheetState = rememberModalBottomSheetState()
 
     val isShuffleEnabled by viewModel.isShuffleEnabled.collectAsState()
-    val repeatMode by viewModel.repeatMode.collectAsState() // Assumed to be an enum (None, All, One)
-    // =========================================================================
+    val repeatMode by viewModel.repeatMode.collectAsState()
 
-    // 2. Local state to handle dragging smoothly
     var isDragging by remember { mutableStateOf(false) }
     var sliderValue by remember { mutableFloatStateOf(0f) }
 
-    Column(
-        modifier = Modifier.padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally // Center everything
+    // Wrap everything in a Surface with proper background
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 8.dp // Optional: adds a subtle shadow
     ) {
-        // 1. Track Title
-        Text(
-            text = currentTrack ?: "Choose a track",
-            style = MaterialTheme.typography.titleMedium,
-            maxLines = 1,
-            fontWeight = FontWeight.Bold
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Slider(
-                value = if (isDragging) sliderValue else currentPos.toFloat(),
-                valueRange = 0f..duration.toFloat().coerceAtLeast(1f),
-                onValueChange = { newValue ->
-                    isDragging = true
-                    sliderValue = newValue
-                },
-                onValueChangeFinished = {
-                    viewModel.seekTo(sliderValue.toLong())
-                    isDragging = false
-                },
-                // ... Slider content remains the same ...
-                thumb = {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary,
-                        shadowElevation = 4.dp,
-                        modifier = Modifier.size(12.dp)
-                    ) { }
-                },
-                track = { sliderState ->
-                    SliderDefaults.Track(
-                        sliderState = sliderState,
-                        modifier = Modifier.height(4.dp),
-                        thumbTrackGapSize = 0.dp,
-                        drawStopIndicator = null,
-                        colors = SliderDefaults.colors(
-                            activeTrackColor = MaterialTheme.colorScheme.primary,
-                            inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        )
-                    )
-                },
-                modifier = Modifier.height(20.dp)
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Track Title
+            Text(
+                text = currentTrack?.title?: "Choose a track",
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                fontWeight = FontWeight.Bold
             )
 
-            // Time Labels (Made smaller and closer to slider)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp)
-                    .offset(y = (-6).dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = formatTime(if (isDragging) sliderValue.toLong() else currentPos),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Slider Section
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Slider(
+                    value = if (isDragging) sliderValue else currentPos.toFloat(),
+                    valueRange = 0f..duration.toFloat().coerceAtLeast(1f),
+                    onValueChange = { newValue ->
+                        isDragging = true
+                        sliderValue = newValue
+                    },
+                    onValueChangeFinished = {
+                        viewModel.seekTo(sliderValue.toLong())
+                        isDragging = false
+                    },
+                    thumb = {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary,
+                            shadowElevation = 4.dp,
+                            modifier = Modifier.size(12.dp)
+                        ) { }
+                    },
+                    track = { sliderState ->
+                        SliderDefaults.Track(
+                            sliderState = sliderState,
+                            modifier = Modifier.height(4.dp),
+                            thumbTrackGapSize = 0.dp,
+                            drawStopIndicator = null,
+                            colors = SliderDefaults.colors(
+                                activeTrackColor = MaterialTheme.colorScheme.primary,
+                                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            )
+                        )
+                    },
+                    modifier = Modifier.height(20.dp)
                 )
-                Text(
-                    text = formatTime(duration),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary
-                )
+
+                // Time Labels
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp)
+                        .offset(y = (-6).dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = formatTime(if (isDragging) sliderValue.toLong() else currentPos),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                    Text(
+                        text = formatTime(duration),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
             }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
 
-        // 2. The Buttons Row (Now using SpaceBetween to spread controls)
-        Row(
-            modifier = Modifier.fillMaxWidth(), // <--- Fill width
-            verticalAlignment = Alignment.CenterVertically,        ) {
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // =========================================================================
-            // NEW: Shuffle and Repeat buttons on the left
-            // =========================================================================
+            // Controls Row
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                modifier = Modifier.weight(1f), // Takes up 1/3 of the main Row's width
             ) {
-                // 1. Shuffle Button
-                IconButton(onClick = { viewModel.toggleShuffle() }) {
-                    Icon(
-                        imageVector = Icons.Default.Shuffle,
-                        contentDescription = "Shuffle",
-                        tint = if (isShuffleEnabled)
+                // Shuffle and Repeat buttons
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    IconButton(onClick = { viewModel.toggleShuffle() }) {
+                        Icon(
+                            imageVector = Icons.Default.Shuffle,
+                            contentDescription = "Shuffle",
+                            tint = if (isShuffleEnabled)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    IconButton(onClick = { viewModel.toggleRepeat() }) {
+                        val icon = when (repeatMode) {
+                            RepeatMode.One -> Icons.Default.RepeatOne
+                            RepeatMode.All -> Icons.Default.Repeat
+                            RepeatMode.None -> Icons.Default.Repeat
+                        }
+                        val tintColor = if (repeatMode != RepeatMode.None)
                             MaterialTheme.colorScheme.primary
                         else
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        modifier = Modifier.size(20.dp)                     )
-                }
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
 
-                // 2. Repeat Button
-                IconButton(onClick = { viewModel.toggleRepeat() }) {
-                    val icon = when (repeatMode) {
-                        RepeatMode.One -> Icons.Default.RepeatOne
-                        RepeatMode.All -> Icons.Default.Repeat
-                        RepeatMode.None -> Icons.Default.Repeat
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = "Repeat",
+                            tint = tintColor,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
-                    val tintColor = if (repeatMode != RepeatMode.None)
-                        MaterialTheme.colorScheme.primary
-                    else
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = "Repeat",
-                        tint = tintColor,
-                        modifier = Modifier.size(20.dp)                     )
-                }
-            }
-            Spacer(modifier = Modifier.weight(.5f))
-            // 2. The Buttons Row
-            Row(
-                modifier = Modifier.weight(2f), // Takes up 1/3 of the main Row's width
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center // Center the content within its 1/3 space
-            ) {
-                // Previous Button
-                IconButton(onClick = { viewModel.skipPrevious() }) {
-                    Icon(
-                        imageVector = Icons.Default.SkipPrevious,
-                        contentDescription = "Previous",
-                        modifier = Modifier.size(32.dp)
-                    )
                 }
 
-                // Play/Pause Button (Highlighted)
-                FilledIconButton(
-                    onClick = { viewModel.togglePlayPause() },
-                    modifier = Modifier.size(56.dp) // Make it bigger
+                Spacer(modifier = Modifier.weight(.5f))
+
+                // Main playback controls
+                Row(
+                    modifier = Modifier.weight(2f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    Icon(
-                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = if (isPlaying) "Pause" else "Play",
-                        modifier = Modifier.size(32.dp)
-                    )
+                    IconButton(onClick = { viewModel.skipPrevious() }) {
+                        Icon(
+                            imageVector = Icons.Default.SkipPrevious,
+                            contentDescription = "Previous",
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+
+                    FilledIconButton(
+                        onClick = { viewModel.togglePlayPause() },
+                        modifier = Modifier.size(56.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            contentDescription = if (isPlaying) "Pause" else "Play",
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+
+                    IconButton(onClick = { viewModel.skipNext() }) {
+                        Icon(
+                            imageVector = Icons.Default.SkipNext,
+                            contentDescription = "Next",
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
                 }
 
-                // Next Button
-                IconButton(onClick = { viewModel.skipNext() }) {
-                    Icon(
-                        imageVector = Icons.Default.SkipNext,
-                        contentDescription = "Next",
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.weight(.5f))
-            Row(
-                modifier = Modifier.weight(1f), // Takes up 1/3 of the main Row's width
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.End // Anchors content to the right
-            ) {
-                // Queue Button
-                IconButton(onClick = { showQueue = true }) {
-                    Icon(
-                        imageVector = Icons.Default.QueueMusic,
-                        contentDescription = "Queue",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+                Spacer(modifier = Modifier.weight(.5f))
 
+                // Queue button
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    IconButton(onClick = { showQueue = true }) {
+                        Icon(
+                            imageVector = Icons.Default.QueueMusic,
+                            contentDescription = "Queue",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
         }
     }
+
+    // Queue Modal (unchanged)
     if (showQueue) {
         ModalBottomSheet(
             onDismissRequest = { showQueue = false },
             sheetState = sheetState
         ) {
-            // Content of the Sheet
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -261,17 +267,13 @@ fun AudioControl(viewModel : AllSongsViewModel){
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                // Reuse your existing list logic, or make a simpler one
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(bottom = 24.dp) // padding for bottom bar
+                    contentPadding = PaddingValues(bottom = 24.dp)
                 ) {
-                    items(nextTracks, key = { it.contentUri }) { track -> // Use a unique key like path or ID if available
-                        val trackTitle = track.title
+                    items(nextTracks, key = { it.contentUri }) { track ->
                         QueueItem(
-                            title = trackTitle,
-                            // isPlaying should be FALSE for all items in 'nextTracks'
-                            // The current track is by definition NOT in the queue list.
+                            title = track.title,
                             isPlaying = false,
                             onClick = {
                                 viewModel.selectTrack(track)
@@ -283,12 +285,6 @@ fun AudioControl(viewModel : AllSongsViewModel){
             }
         }
     }
-}
-fun formatTime(ms: Long): String {
-    val totalSeconds = ms / 1000
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    return String.format("%02d:%02d", minutes, seconds)
 }
 
 @Composable
@@ -326,4 +322,11 @@ fun QueueItem(title: String, isPlaying: Boolean, onClick: () -> Unit) {
             color = if (isPlaying) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
         )
     }
+
+}
+fun formatTime(ms: Long): String {
+    val totalSeconds = ms / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return String.format("%02d:%02d", minutes, seconds)
 }
