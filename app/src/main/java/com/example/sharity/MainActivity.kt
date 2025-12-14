@@ -5,12 +5,14 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.database.Cursor
 import android.net.Uri
 import android.nfc.Tag
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -107,6 +109,8 @@ object RootDestinations {
 // FIXME: Move to viewmodel, to prevent Memory leak
 private lateinit var nfcController: NfcController
 private lateinit var wifiHandshake: WifiDirectHandshake
+private lateinit var allSongsViewModel: AllSongsViewModel
+private lateinit var exoPlayer: ExoPlayer
 private val nfcClient = NfcClient()
 private var myUuid: String = ""
 class MainActivity : ComponentActivity() {
@@ -129,7 +133,7 @@ class MainActivity : ComponentActivity() {
             IntentFilter(NfcProfileService.ACTION_NFC_TRANSACTION_COMPLETE)
         )
 
-        val exoPlayer = ExoPlayer.Builder(applicationContext).build()
+        exoPlayer = ExoPlayer.Builder(applicationContext).build()
 
         initPermissions()
         initAppData()
@@ -152,7 +156,7 @@ class MainActivity : ComponentActivity() {
             val currentRoute = navBackStackEntry?.destination?.route
 
             // --- VIEW MODEL SETUP ---
-            val allSongsViewModel = viewModel<AllSongsViewModel>(
+            allSongsViewModel = viewModel<AllSongsViewModel>(
                 factory = object : ViewModelProvider.Factory {
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         @Suppress("UNCHECKED_CAST")
@@ -552,6 +556,8 @@ class MainActivity : ComponentActivity() {
             val indexer = MP3Indexer(applicationContext, db(), MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
             indexer.index()
             Log.d("TRANSFER", "TRANSFER DONE")
+
+            allSongsViewModel.refreshTracks()
             onTransferFinished()
         }
     }
@@ -564,7 +570,6 @@ class MainActivity : ComponentActivity() {
         sendFiles: Boolean
     ) {
         val fileTransfer = FileTransferService()
-
         if (sendFiles) {
             val filesToSend = db().trackDao().getAll()?.map { track ->
                 applicationContext.uriToTempFile(Uri.parse(track.contentUri))
@@ -574,13 +579,24 @@ class MainActivity : ComponentActivity() {
                 return
             }
 
+            Thread {
+                db().connectionDao().insertTracksSent( filesToSend.count(), wifiHandshake.deviceAddress)
+            }.start()
+
             fileTransfer.sendFiles(hostAddress, port, filesToSend)
             filesToSend.forEach { it.delete() }
         } else {
             val result = withTimeoutOrNull(10_000) {
                 fileTransfer.receiveFiles(port, filesDir)
                     .onSuccess { receivedFiles ->
-                        receivedFiles?.forEach { receivedFile ->
+                        if (receivedFiles == null || receivedFiles.isEmpty()) {
+                            return@onSuccess
+                        }
+                        Thread {
+                            db().connectionDao().insertTracksReceived(receivedFiles.count(), wifiHandshake.deviceAddress)
+                        }.start()
+
+                        receivedFiles.forEach { receivedFile ->
                             Log.d("TRANSFER", "File received: ${receivedFile.absolutePath}")
 
                             val mediaUri = applicationContext
@@ -616,14 +632,12 @@ class MainActivity : ComponentActivity() {
     }
 
     fun Context.uriToTempFile(uri: Uri): File {
+        val fileName = queryFileName(uri) ?: "shared_file.mp3"
+
         val inputStream = contentResolver.openInputStream(uri)
             ?: throw IllegalStateException("Cannot open URI: $uri")
 
-        val tempFile = File.createTempFile(
-            "share_",
-            ".mp3",
-            cacheDir
-        )
+        val tempFile = File(cacheDir, fileName)
 
         inputStream.use { input ->
             tempFile.outputStream().use { output ->
@@ -632,6 +646,25 @@ class MainActivity : ComponentActivity() {
         }
 
         return tempFile
+    }
+
+    private fun Context.queryFileName(uri: Uri): String? {
+        val cursor: Cursor? = contentResolver.query(
+            uri,
+            arrayOf(OpenableColumns.DISPLAY_NAME),
+            null,
+            null,
+            null
+        )
+
+        cursor?.use {
+            if (it.moveToFirst()) {
+                return it.getString(
+                    it.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME)
+                )
+            }
+        }
+        return null
     }
 
 
@@ -705,7 +738,7 @@ suspend fun generateTestConnections(db: AppDatabase) {
 
             connections.add(
                 Connection(
-                    connectionID = i.toString(),
+                    connectionID = i,
                     username = randomName,
                     connectionUuid = uuid,
                     tracksSent = Random.nextInt(0, 20),

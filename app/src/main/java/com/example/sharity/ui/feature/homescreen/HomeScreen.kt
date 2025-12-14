@@ -155,9 +155,9 @@ fun HomeScreen(
                 )
 
                 val sampleLastPeers = listOf(
-                    Connection(3.toString(), "Chris", "uuid-3", 200, 180),
-                    Connection(4.toString(), "Dana", "uuid-4", 20, 0),
-                    Connection(5.toString(), "Eve", "uuid-5", 15, 2000)
+                    Connection(3, "Chris", "uuid-3", 200, 180),
+                    Connection(4, "Dana", "uuid-4", 20, 0),
+                    Connection(5, "Eve", "uuid-5", 15, 2000)
                 )
 
                 if (sampleLastPeers.isEmpty()) {

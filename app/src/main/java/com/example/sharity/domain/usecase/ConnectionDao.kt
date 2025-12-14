@@ -14,6 +14,28 @@ interface ConnectionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertAll(vararg connection: Connection)
 
+    @Query("""
+        UPDATE connections
+        SET tracks_received = :received
+        WHERE connection_id = (
+            SELECT MAX(connection_id)
+            FROM connections
+            WHERE connection_uuid = :name
+        )
+    """)
+    fun insertTracksReceived(received: Int, name: String)
+
+    @Query("""
+        UPDATE connections
+        SET tracks_received = :sent
+        WHERE connection_id = (
+            SELECT MAX(connection_id)
+            FROM connections
+            WHERE connection_uuid = :name
+        )
+    """)
+    fun insertTracksSent(sent: Int, name: String)
+
     @Delete
     fun delete(connection: Connection)
 

@@ -7,6 +7,7 @@ import com.example.sharity.domain.model.Playlist
 import com.example.sharity.domain.model.Track
 import com.example.sharity.domain.model.TrackPlaylistJunction
 import com.example.sharity.domain.usecase.PlaylistDao
+import com.example.sharity.domain.usecase.TrackDao
 import kotlinx.coroutines.flow.SharingStarted // 2. Need this for stateIn
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn // <-- This is the crucial one
@@ -16,6 +17,7 @@ class PlaylistSelectionViewModel(
     db : AppDatabase
 ): ViewModel() {
     private val playlistDao: PlaylistDao = db.playlistDao()
+    private val trackDao: TrackDao = db.trackDao()
 
     // 5. CORRECT WAY: Use stateIn to collect the database Flow
     val userPlaylists: StateFlow<List<Playlist>> = playlistDao.getPlaylists()
@@ -35,19 +37,20 @@ class PlaylistSelectionViewModel(
 
         // 2. Insert the playlist and get the generated Long ID
         // NOTE: This assumes you added the createPlaylistAndGetId function to your DAO
-        val newPlaylistId= playlistDao.createPlaylist(newPlaylist)
-
+        playlistDao.createPlaylist(newPlaylist)
+        val newPlaylistId = playlistDao.getID(name)
         // 3. Insert all cross-reference entries
         tracks.forEach { track ->
+            trackDao.insertAllAsync(track)
             val junction = TrackPlaylistJunction(
-                playlist_id = newPlaylistId.toInt(),
-                content_uri = track.contentUri // Assuming Track has a contentUri field
+                playlistID = newPlaylistId,
+                contentUri = track.contentUri // Assuming Track has a contentUri field
             )
-            playlistDao.insertPlaylistTrackCrossRef(junction)
+            playlistDao.addTrackToPlaylist(newPlaylist, track)
         }
 
         // 4. Return the new ID for navigation
-        return newPlaylistId.toInt()
+        return newPlaylistId
     }
 
 

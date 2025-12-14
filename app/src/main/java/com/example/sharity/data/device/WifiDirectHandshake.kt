@@ -1,20 +1,26 @@
 package com.example.sharity.data.device
 
+import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.wifi.WpsInfo
 import android.net.wifi.p2p.*
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import androidx.annotation.RequiresPermission
 import com.example.sharity.data.local.HandshakeData
+import com.example.sharity.data.wrapper.db
+import com.example.sharity.domain.model.Connection
 
 class WifiDirectHandshake(
     private val context: Context,
     private val myUuid: String,
     private val onConnectionEstablished: (hostAddress: String, port: Int, isGroupOwner: Boolean) -> Unit
 ) {
-
+    public var deviceAddress: String = ""
     private val manager = context.getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
     private val channel = manager.initialize(context, context.mainLooper, null)
     private var handshake: HandshakeData? = null
@@ -22,6 +28,7 @@ class WifiDirectHandshake(
     private var isConnected = false
     private var connectionAttempted = false
 
+    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.NEARBY_WIFI_DEVICES])
     fun start(handshakeData: HandshakeData, forceInitiator: Boolean = false) {
         handshake = handshakeData
 
@@ -35,6 +42,7 @@ class WifiDirectHandshake(
         discoverPeers()
     }
 
+    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.NEARBY_WIFI_DEVICES])
     private fun discoverPeers() {
         manager.discoverPeers(channel, object : WifiP2pManager.ActionListener {
             override fun onSuccess() {
@@ -48,6 +56,7 @@ class WifiDirectHandshake(
     }
 
     private val receiver = object : BroadcastReceiver() {
+        @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.NEARBY_WIFI_DEVICES])
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
 
@@ -72,6 +81,7 @@ class WifiDirectHandshake(
         Log.d("WIFI", "WiFi P2P enabled: $enabled")
     }
 
+    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.NEARBY_WIFI_DEVICES])
     private fun handlePeersChanged() {
         if (isConnected) {
             Log.d("WIFI", "Already connected, ignoring peers")
@@ -107,6 +117,11 @@ class WifiDirectHandshake(
         Log.d("WIFI", "Peers found: ${devices.size}")
         devices.forEach {
             Log.d("WIFI", "Peer: ${it.deviceName} - ${it.deviceAddress}")
+
+            Thread {
+                context.db().connectionDao().insertAll(Connection(username = it.deviceName, connectionUuid = it.deviceAddress))
+            }.start()
+            deviceAddress = it.deviceAddress
         }
     }
 
@@ -168,6 +183,7 @@ class WifiDirectHandshake(
     }
 
 
+    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.NEARBY_WIFI_DEVICES])
     private fun connectToPeer(device: WifiP2pDevice) {
         val config = WifiP2pConfig().apply {
             deviceAddress = device.deviceAddress
@@ -194,12 +210,14 @@ class WifiDirectHandshake(
                 // If busy, retry only once after a delay
                 if (reason == WifiP2pManager.BUSY && !isConnected) {
                     Log.d("WIFI", "INITIATOR: Retrying connection in 2 seconds...")
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    Handler(Looper.getMainLooper()).postDelayed(@androidx.annotation.RequiresPermission(
+                        allOf = [android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.NEARBY_WIFI_DEVICES]
+                    ) {
                         if (!isConnected && !connectionAttempted) {
                             connectionAttempted = true
                             connectToPeer(device)
                         }
-                    }, 2000)
+                    }, 1000)
                 } else {
                     connectionAttempted = false
                 }

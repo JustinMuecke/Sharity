@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import com.example.sharity.data.local.AppDatabase
 import com.example.sharity.domain.model.Playlist
 import com.example.sharity.domain.model.PlaylistWithTracks
 import com.example.sharity.domain.model.Track
@@ -17,19 +18,19 @@ import kotlinx.coroutines.flow.Flow
 interface PlaylistDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun createPlaylist(playlist: Playlist) : Long
+    suspend fun createPlaylist(playlist: Playlist)
+
+    @Query("SELECT playlist_id FROM playlists WHERE playlist_name = :name")
+    suspend fun getID(name: String) : Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPlaylistTrackCrossRef(crossRef: TrackPlaylistJunction)
 
     @Transaction
-    suspend fun addTrackToPlaylist(playlist: Playlist, track: Track)
-    {
+    suspend fun addTrackToPlaylist(playlist: Playlist, track: Track) {
+        createPlaylist(playlist)
         insertPlaylistTrackCrossRef(
-            TrackPlaylistJunction(
-                playlist.playlistID,
-                track.contentUri
-            )
+            TrackPlaylistJunction(playlist.playlistID, track.contentUri)
         )
     }
 

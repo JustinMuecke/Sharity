@@ -60,6 +60,13 @@ class AllSongsViewModel(
         initialValue = emptyList()
     )
 
+    fun refreshTracks() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val trackObjects = trackDao.getAllAsync()
+            _tracks.value = trackObjects
+        }
+    }
+
 
     // -------------------------------------------------------------------------
     // 2. MULTI-SELECTION STATE AND LOGIC (NEW)
@@ -351,6 +358,7 @@ class AllSongsViewModel(
             player.seekToPreviousMediaItem()
         }
     }
+
 
 
 

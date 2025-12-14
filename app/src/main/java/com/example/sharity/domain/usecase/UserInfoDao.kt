@@ -12,7 +12,6 @@ import com.example.sharity.domain.model.UserInfo
 interface UserInfoDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertAll(vararg userInfo: UserInfo)
-
     @Delete
     fun delete(userInfo: UserInfo)
 

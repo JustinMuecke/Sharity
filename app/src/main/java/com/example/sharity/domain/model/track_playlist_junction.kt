@@ -1,5 +1,6 @@
 package com.example.sharity.domain.model
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 
@@ -21,6 +22,8 @@ import androidx.room.ForeignKey
     ]
 )
 data class TrackPlaylistJunction(
-    val playlist_id: Int,
-    val content_uri: String
+    @ColumnInfo(name = "playlist_id")
+    val playlistID: Int,
+    @ColumnInfo(name = "content_uri")
+    val contentUri: String
 )
