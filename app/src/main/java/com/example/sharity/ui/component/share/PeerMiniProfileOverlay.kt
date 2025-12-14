@@ -88,9 +88,12 @@ fun PeerMiniProfileOverlay(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        StatPill(label = "Songs", value = peer?.songs.toString())
-                        StatPill(label = "Sent", value = peer?.sent.toString())
-                        StatPill(label = "Received", value = peer?.received.toString())
+                        val safePeer = peer ?: PeerSummary("Unknown User", 0, 0, 0)
+
+                        Text(text = safePeer.displayName)
+                        StatPill(label = "Songs", value = safePeer.songs.toString())
+                        StatPill(label = "Sent", value = safePeer.sent.toString())
+                        StatPill(label = "Received", value = safePeer.received.toString())
                     }
 
                     Spacer(modifier = Modifier.height(4.dp))

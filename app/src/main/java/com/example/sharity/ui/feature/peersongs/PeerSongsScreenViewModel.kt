@@ -2,14 +2,18 @@ package com.example.sharity.ui.feature.peersongs
 
 import androidx.lifecycle.ViewModel
 import com.example.sharity.domain.model.Track
+import com.example.sharity.ui.component.share.PeerSummary
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 data class PeerSongsUiState(
     val peerName: String = "Nearby User",
     val tracks: List<Track> = emptyList(),
-    val selectedTrackUris: Set<String> = emptySet()
+    val selectedTrackUris: Set<String> = emptySet(),
+    val showPeerOverlay: Boolean = false,
+    val peerSummary: PeerSummary? = null
 )
 
 class PeerSongsViewModel : ViewModel() {
@@ -50,6 +54,14 @@ class PeerSongsViewModel : ViewModel() {
         val current = _uiState.value
         val selected = current.selectedTrackUris
         return current.tracks.filter { selected.contains(it.contentUri) }
+    }
+
+    fun showPeerOverlay(peer: PeerSummary) {
+        _uiState.update { it.copy(showPeerOverlay = true, peerSummary = peer) }
+    }
+
+    fun dismissPeerOverlay() {
+        _uiState.update { it.copy(showPeerOverlay = false) }
     }
 
     private fun placeholderTracks(): List<Track> {

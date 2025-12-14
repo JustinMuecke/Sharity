@@ -287,39 +287,27 @@ class MainActivity : ComponentActivity() {
 
 
                         // PEER/NFC SCREEN (Added Deep Link fix here)
-                        composable(
-                            route = RootDestinations.NFC,
-                            deepLinks = listOf(
-                                navDeepLink { uriPattern = "android-app://androidx.navigation/nfc" }
-                            )
-                        ) {
+                        composable(RootDestinations.NFC) {
+                            //route = RootDestinations.NFC,
+                            //deepLinks = listOf(
+                            //    navDeepLink { uriPattern = "android-app://androidx.navigation/nfc" }
+                            //)
                             val peerSongsViewModel = viewModel<PeerSongsViewModel>()
                             val state = peerSongsViewModel.uiState.collectAsState().value
-                            /*
-                            PeerSongsScreen(
-                                peerName = state.peerName,
-                                tracks = state.tracks,
-                                selectedTrackUris = state.selectedTrackUris,
-                                onToggleSelect = { track -> peerSongsViewModel.toggleSelect(track) },
-                                onCancel = {
-                                    peerSongsViewModel.clearSelection()
-                                    navController.navigateUp()
-                                },
-                                onFinished = {
-                                    val selected = peerSongsViewModel.getSelectedTracks()
-                                    peerSongsViewModel.clearSelection()
-                                    navController.navigateUp()
-                                },
-                                */
+
                             PeerMiniProfileOverlay(
-                                false,
-                                null,
-                                onDismiss = {},
-                                onOpenPeer = {},
+                                visible = state.showPeerOverlay,
+                                peer = state.peerSummary,
+                                onDismiss = { peerSongsViewModel.dismissPeerOverlay() },
+                                onOpenPeer = {
+                                    peerSongsViewModel.dismissPeerOverlay()
+                                    navController.navigate(RootDestinations.PEER) // oder direkt PeerSongsScreen Route
+                                },
                                 modifier = Modifier.fillMaxSize()
                             )
-
                         }
+
+
                         composable(RootDestinations.FRIENDS) {
                             val friendsViewModel = viewModel<FriendsViewModel>(
                                 factory = object : ViewModelProvider.Factory {
