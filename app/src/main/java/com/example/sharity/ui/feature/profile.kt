@@ -60,6 +60,7 @@ enum class ProfileImageOption(@DrawableRes val resId: Int) {
 @Composable
 fun ProfileScreen(
     modifier: Modifier = Modifier,
+    paddingValues : PaddingValues,
 ) {
     val bioState = remember { mutableStateOf("Tell us about your music taste, last concert, etc.") }
     val stats = UserStats(songs = 42, sent = 10, received = 5)

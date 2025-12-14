@@ -27,14 +27,22 @@ import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink // Needed for NFC Deep Link fix
 import com.example.sharity.data.device.MP3Indexer
 import com.example.sharity.data.device.NfcClient
+import com.example.sharity.data.local.AppDatabase
 import com.example.sharity.data.wrapper.db
 import com.example.sharity.data.wrapper.userRepo
 import com.example.sharity.data.wrapper.NfcController
+import com.example.sharity.domain.model.Connection
 import com.example.sharity.ui.component.AudioControl
 import com.example.sharity.ui.component.navBar.NavBar
 import com.example.sharity.ui.component.playlist.SongSelectorModalContent // Assuming this is correct
+import com.example.sharity.ui.component.share.PeerMiniProfileOverlay
+import com.example.sharity.ui.feature.ProfileScreen
 import com.example.sharity.ui.feature.allsongsscreen.AllSongsView
 import com.example.sharity.ui.feature.allsongsscreen.AllSongsViewModel
+import com.example.sharity.ui.feature.friends.FriendsScreen
+import com.example.sharity.ui.feature.friends.FriendsViewModel
+import com.example.sharity.ui.feature.history.HistoryScreen
+import com.example.sharity.ui.feature.history.HistoryViewModel
 import com.example.sharity.ui.feature.homescreen.HomeScreen
 import com.example.sharity.ui.feature.peersongs.PeerSongsScreen
 import com.example.sharity.ui.feature.peersongs.PeerSongsViewModel
@@ -44,7 +52,10 @@ import com.example.sharity.ui.feature.playlistselection.PlaylistSelectionScreen
 import com.example.sharity.ui.feature.playlistselection.PlaylistSelectionViewModel
 import com.example.sharity.ui.feature.playlistscreen.PlaylistViewModel
 import com.example.sharity.ui.theme.SharityTheme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.random.Random
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -75,6 +86,10 @@ class MainActivity : ComponentActivity() {
         nfcController = NfcController(this) { tag -> logNfcMessages(tag) }
         val userRepo = this.applicationContext.userRepo()
         val db = db()
+       // lifecycleScope.launch {
+        //    generateTestConnections(db)
+        //    Log.d("TestData", "Generated 30 test connections!")
+       // }
         val exoPlayer = ExoPlayer.Builder(applicationContext).build()
 
         // Indexer setup remains the same
@@ -183,7 +198,13 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.fillMaxSize(),
                             )
                         }
-
+                        composable(RootDestinations.PROFILE) {
+                            // Create your profile screen here
+                            ProfileScreen(
+                                paddingValues = innerPadding,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
                         // PLAYLIST SELECTION
                         composable(RootDestinations.PLAYLISTS) {
                             PlaylistSelectionScreen(
@@ -211,7 +232,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                             val peerSongsViewModel = viewModel<PeerSongsViewModel>()
                             val state = peerSongsViewModel.uiState.collectAsState().value
-
+                            /*
                             PeerSongsScreen(
                                 peerName = state.peerName,
                                 tracks = state.tracks,
@@ -226,10 +247,48 @@ class MainActivity : ComponentActivity() {
                                     peerSongsViewModel.clearSelection()
                                     navController.navigateUp()
                                 },
+                                */
+                            PeerMiniProfileOverlay(
+                                false,
+                                null,
+                                onDismiss = {},
+                                onOpenPeer = {},
+                                modifier = Modifier.fillMaxSize()
+                            )
+
+                        }
+                        composable(RootDestinations.FRIENDS) {
+                            val friendsViewModel = viewModel<FriendsViewModel>(
+                                factory = object : ViewModelProvider.Factory {
+                                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                                        @Suppress("UNCHECKED_CAST")
+                                        return FriendsViewModel(db) as T
+                                    }
+                                }
+                            )
+
+                            FriendsScreen(
+                                viewModel = friendsViewModel,
+                                paddingValues = innerPadding,
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
+                        composable(RootDestinations.HISTORY) {
+                            val historyViewModel = viewModel<HistoryViewModel>(
+                                factory = object : ViewModelProvider.Factory {
+                                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                                        @Suppress("UNCHECKED_CAST")
+                                        return HistoryViewModel(db) as T
+                                    }
+                                }
+                            )
 
+                            HistoryScreen(
+                                viewModel = historyViewModel,
+                                paddingValues = innerPadding,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
                         // ... (PEER destination logic can be simplified if it routes to NFC)
                         composable(route= RootDestinations.PEER) {
                             // If PEER is the same as NFC for now, you can just navigate:
@@ -344,3 +403,35 @@ class MainActivity : ComponentActivity() {
     }
     // ... (onResume, onPause, onNewIntent, logNfcMessages remain the same)
 }
+suspend fun generateTestConnections(db: AppDatabase) {
+    withContext(Dispatchers.IO) {
+        val connectionDao = db.connectionDao()
+
+        val names = listOf(
+            "Alice", "Bob", "Charlie", "Diana", "Eve",
+            "Frank", "Grace", "Henry", "Ivy", "Jack"
+        )
+
+        val connections = mutableListOf<Connection>()
+
+        // Generate 30 test connections
+        for (i in 1..30) {
+            val randomName = names.random()
+            val uuid = "uuid-$randomName-${Random.nextInt(1000)}"
+
+            connections.add(
+                Connection(
+                    connectionID = i,
+                    username = randomName,
+                    connectionUuid = uuid,
+                    tracksSent = Random.nextInt(0, 20),
+                    tracksReceived = Random.nextInt(0, 20)
+                )
+            )
+        }
+
+        connectionDao.insertAll(*connections.toTypedArray())
+    }
+}
+
+// Then call it from your MainActivity's onCreat
