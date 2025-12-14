@@ -64,6 +64,7 @@ import com.example.sharity.ui.theme.SharityTheme
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.collectAsState
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.example.sharity.data.device.MP3IndexerManager
 import com.example.sharity.data.device.NfcProfileService
 import com.example.sharity.data.device.WifiDirectHandshake
 import com.example.sharity.data.local.FileTransferService
@@ -109,6 +110,8 @@ private lateinit var nfcController: NfcController
 private lateinit var wifiHandshake: WifiDirectHandshake
 private val nfcClient = NfcClient()
 private var myUuid: String = ""
+lateinit var indexerManager: MP3IndexerManager
+
 class MainActivity : ComponentActivity() {
 
     private val nfcTransactionReceiver = object : BroadcastReceiver() {
@@ -448,7 +451,8 @@ class MainActivity : ComponentActivity() {
 
 
                 val indexer = MP3Indexer(applicationContext, db(), MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
-                indexer.index()
+                indexerManager = MP3IndexerManager(indexer)
+                indexerManager.startIndex()
 
                 NfcPayloadCache.update(
                     repo.getProfile().toNfcPayload()
