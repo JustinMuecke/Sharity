@@ -43,7 +43,7 @@ class FriendsViewModel(db: AppDatabase) : ViewModel() {
         _isLoading.value = false
     }
 
-    // todo - add data only if empty
+
     private fun seedDemoConnectionsIfEmpty() {
         viewModelScope.launch(Dispatchers.IO) {
             if (connectionDao.countConnections() == 0) {
