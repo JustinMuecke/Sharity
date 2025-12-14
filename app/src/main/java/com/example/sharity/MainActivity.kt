@@ -91,8 +91,15 @@ import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
 
+
+
+
 object RootDestinations {
     // ... (All your destination objects remain the same)
+    // landing page
+    const val LANDING = "landing"
+    const val PROFILE_SETUP = "profile_setup"
+
     const val HOME = "home"
     const val PROFILE = "profile"
     const val NFC = "nfc" // Destination for NFC handling
@@ -104,6 +111,8 @@ object RootDestinations {
     const val ALL_SONGS = "all_songs"
 }
 
+
+// FIXME: Move to viewmodel, to prevent Memoryleak
 // FIXME: Move to viewmodel, to prevent Memory leak
 private lateinit var nfcController: NfcController
 private lateinit var wifiHandshake: WifiDirectHandshake
@@ -176,6 +185,21 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     topBar = {
+                        // hide nav and top bar on launch scrren
+                        val hideTopBar = currentRoute in setOf(
+                        RootDestinations.LANDING,
+                        RootDestinations.PROFILE_SETUP
+                        )
+                        if (!hideTopBar) {
+                            NavBar(
+                                showBack = showBackButton,
+                                onBackClick = { navController.navigateUp() },
+                                onNfcClick = { navController.navigate(RootDestinations.NFC) },
+                                onProfileClick = { navController.navigate(RootDestinations.PROFILE) },
+                                onOpenPeer = { }
+                            )
+                        }
+
                         val screenTitle = when (currentRoute) { // Use currentRoute here
                             RootDestinations.HOME -> "My Music Library"
                             // Add more cases for other routes
@@ -200,10 +224,47 @@ class MainActivity : ComponentActivity() {
 
                     // 1. NAV HOST (The main screen content)
                     NavHost(
+
                         navController = navController,
-                        startDestination = RootDestinations.HOME,
+                        // TODO if already setup
+                        startDestination = RootDestinations.LANDING, //landing page
+                        // startDestination = RootDestinations.HOME,
                         modifier = Modifier.fillMaxSize() // Fill the space provided by Scaffold
                     ) {
+                        // LANDING
+                        composable(RootDestinations.LANDING) {
+                            // @Justin: auslagern?
+                            com.example.sharity.ui.feature.setupProfile.LandingScreen(
+                                db = db,
+                                onGoToSetup = {
+                                    navController.navigate(RootDestinations.PROFILE_SETUP)
+                                },
+                                onGoToHome = {
+                                    navController.navigate(RootDestinations.HOME) {
+                                        popUpTo(RootDestinations.LANDING) { inclusive = true }
+                                    }
+                                }
+
+                            )
+                        }
+
+
+                        // PROFILE SETUP
+                        composable(RootDestinations.PROFILE_SETUP) {
+                            // @Justin: auslagern?
+                            com.example.sharity.ui.feature.setupProfile.ProfileSetupScreen(
+                                db = db,
+                                paddingValues = innerPadding,
+                                onContinue = {
+                                    navController.navigate(RootDestinations.HOME) {
+                                        popUpTo(RootDestinations.PROFILE_SETUP) { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
+
+
 
                         // HOME
                         composable(RootDestinations.HOME) {
@@ -230,13 +291,16 @@ class MainActivity : ComponentActivity() {
                                 paddingValues = innerPadding,
                             )
                         }
+
                         composable(RootDestinations.PROFILE) {
-                            // Create your profile screen here
                             ProfileScreen(
                                 paddingValues = innerPadding,
+                                db = db,
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
+
+
                         // PLAYLIST SELECTION
                         composable(RootDestinations.PLAYLISTS) {
                             PlaylistSelectionScreen(

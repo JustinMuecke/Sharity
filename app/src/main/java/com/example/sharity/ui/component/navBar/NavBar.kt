@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.dp
 import com.example.sharity.ui.component.share.PeerMiniProfileOverlay
 import com.example.sharity.ui.component.share.PeerSummary
 
+
+// todo: startDestination = RootDestinations.LANDING
 @Composable
 fun NavBar(
     showBack: Boolean,
