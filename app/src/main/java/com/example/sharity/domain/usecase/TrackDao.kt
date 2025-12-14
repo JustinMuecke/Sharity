@@ -24,4 +24,7 @@ interface TrackDao {
     fun getAll() : List<Track>
     @Query("SELECT * FROM tracks")
     suspend fun getAllAsync() : List<Track>
+
+    @Query("SELECT COUNT(*) FROM tracks")
+    fun countTracks() : Int
 }
