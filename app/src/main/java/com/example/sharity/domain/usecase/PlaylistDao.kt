@@ -17,22 +17,18 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface PlaylistDao {
 
+    // 1. Change this to return Long (The generated ID)
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun createPlaylist(playlist: Playlist)
-
-    @Query("SELECT playlist_id FROM playlists WHERE playlist_name = :name")
-    suspend fun getID(name: String) : Int
+    suspend fun createPlaylist(playlist: Playlist): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPlaylistTrackCrossRef(crossRef: TrackPlaylistJunction)
 
-    @Transaction
-    suspend fun addTrackToPlaylist(playlist: Playlist, track: Track) {
-        createPlaylist(playlist)
-        insertPlaylistTrackCrossRef(
-            TrackPlaylistJunction(playlist.playlistID, track.contentUri)
-        )
-    }
+    // Remove the old addTrackToPlaylist method.
+    // It was causing issues by calling createPlaylist repeatedly inside a loop.
+
+    @Query("SELECT playlist_id FROM playlists WHERE playlist_name = :name")
+    suspend fun getID(name: String) : Int
 
     @Delete
     suspend fun delete(playlist: Playlist)
@@ -50,16 +46,14 @@ interface PlaylistDao {
 
     @Transaction
     @Query("SELECT * FROM playlists WHERE playlist_id = :id")
-    fun getPlaylistWithTracks(id: Int): Flow<PlaylistWithTracks?> // <-- New: Reactive playlist with tracks
+    fun getPlaylistWithTracks(id: Int): Flow<PlaylistWithTracks?>
 
     @Transaction
     @Query("""
-    SELECT T.* FROM tracks AS T
-    INNER JOIN TrackPlaylistJunction AS J 
-    ON T.content_uri = J.content_uri  -- <--- FIX 1: Changed J.trackContentUri to J.content_uri
-    WHERE J.playlist_id = :id         -- <--- FIX 2: Changed J.playlistId to J.playlist_id
-""")
+        SELECT T.* FROM tracks AS T
+        INNER JOIN TrackPlaylistJunction AS J 
+        ON T.content_uri = J.content_uri 
+        WHERE J.playlist_id = :id
+    """)
     fun getSongsByPlaylistId(id: Int): Flow<List<Track>>
-
-
 }
