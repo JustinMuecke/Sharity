@@ -11,18 +11,19 @@ import com.example.sharity.domain.model.Playlist
 import com.example.sharity.domain.model.PlaylistWithTracks
 import com.example.sharity.domain.model.Track
 import com.example.sharity.domain.model.TrackPlaylistJunction
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PlaylistDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun createPlaylist(playlist: Playlist)
+    suspend fun createPlaylist(playlist: Playlist) : Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertPlaylistTrackCrossRef(crossRef: TrackPlaylistJunction)
+    suspend fun insertPlaylistTrackCrossRef(crossRef: TrackPlaylistJunction)
 
     @Transaction
-    fun addTrackToPlaylist(playlist: Playlist, track: Track)
+    suspend fun addTrackToPlaylist(playlist: Playlist, track: Track)
     {
         insertPlaylistTrackCrossRef(
             TrackPlaylistJunction(
@@ -33,12 +34,31 @@ interface PlaylistDao {
     }
 
     @Delete
-    fun delete(playlist: Playlist)
+    suspend fun delete(playlist: Playlist)
 
     @Update
-    fun update(playlist: Playlist)
+    suspend fun update(playlist: Playlist)
 
     @Transaction
     @Query("SELECT * FROM playlists WHERE playlist_id = :id")
-    fun getPlaylist(id: Int) : PlaylistWithTracks
+    suspend fun getPlaylist(id: Int) : PlaylistWithTracks
+
+    @Transaction
+    @Query(value="SELECT * FROM playlists")
+    fun getPlaylists() : Flow<List<Playlist>>
+
+    @Transaction
+    @Query("SELECT * FROM playlists WHERE playlist_id = :id")
+    fun getPlaylistWithTracks(id: Int): Flow<PlaylistWithTracks?> // <-- New: Reactive playlist with tracks
+
+    @Transaction
+    @Query("""
+    SELECT T.* FROM tracks AS T
+    INNER JOIN TrackPlaylistJunction AS J 
+    ON T.content_uri = J.content_uri  -- <--- FIX 1: Changed J.trackContentUri to J.content_uri
+    WHERE J.playlist_id = :id         -- <--- FIX 2: Changed J.playlistId to J.playlist_id
+""")
+    fun getSongsByPlaylistId(id: Int): Flow<List<Track>>
+
+
 }

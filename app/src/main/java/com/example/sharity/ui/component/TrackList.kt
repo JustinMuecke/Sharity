@@ -1,31 +1,41 @@
-package com.example.sharity.ui.component
-
-import TrackCard
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.sharity.ui.feature.allsongsscreen.AllSongsViewModel
+import com.example.sharity.domain.model.Playlist
+import com.example.sharity.domain.model.Track
 
 @Composable
-fun TrackList(viewModel: AllSongsViewModel, modifier: Modifier = Modifier){
+fun ReusableTrackList(
+    trackList: List<Track>,
+    selectedTracks: Set<Track>,
+    onTrackClick: (Track) -> Unit,
+    onTrackSelect: (Track) -> Unit,
+    isSelectionMode: Boolean,
+    currentListName: String,
+    // New parameters for playlist functionality
+    playlists: List<Playlist> = emptyList(),
+    onAddTrackToPlaylist: ((Track, Playlist) -> Unit)? = null,
+    onCreateNewPlaylist: (() -> Unit)? = null,
+    // Search parameters
+    searchQuery: String = "",
+    onSearchQueryChange: ((String) -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    var showPlaylistDialog by remember { mutableStateOf(false) }
+    var selectedTrackForPlaylist by remember { mutableStateOf<Track?>(null) }
 
-    val trackList by viewModel.filteredTracks.collectAsState()
-    val selectedTrack by viewModel.currentTrack.collectAsState()
-    val currentListName by viewModel.currentListName.collectAsState()
     Column(
         modifier = modifier.fillMaxSize()
     ) {
+        // List Name/Title
         Text(
             text = currentListName,
             style = MaterialTheme.typography.titleLarge,
@@ -34,27 +44,49 @@ fun TrackList(viewModel: AllSongsViewModel, modifier: Modifier = Modifier){
             modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 8.dp),
             color = MaterialTheme.colorScheme.primary
         )
-        // 1. Add the SearchBar component above the LazyColumn
-        SearchBar(viewModel = viewModel)
 
+        // Search Bar (optional, only shows if onSearchQueryChange is provided)
+        if (onSearchQueryChange != null) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                placeholder = { Text("Search songs by title...") },
+                leadingIcon = {
+                    Icon(Icons.Default.Search, contentDescription = "Search Icon")
+                },
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(24.dp)
+            )
+        }
+
+        // Track List
         LazyColumn(
-            // The padding is now applied to the OutlinedTextField in SearchBar,
-            // so you might want to adjust the padding here or use a Column for all of them.
-            modifier = modifier.padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // The items() function now uses the filtered trackList
-            items(trackList) { track ->
+            items(items = trackList) { track ->
+                val clickAction = if (isSelectionMode) {
+                    { onTrackSelect(track) }
+                } else {
+                    { onTrackClick(track) }
+                }
+
+                val isSelected = selectedTracks.contains(track)
+
                 TrackCard(
                     uri = track.contentUri,
                     title = track.title,
-                    artist = track.artist ?: "",
-                    isSelected = (track.contentUri == selectedTrack),
-                    onClick = {
-                        viewModel.selectTrack(track)
-                    }
+                    artist = track.artist ?: "Unknown Artist",
+                    isSelected = isSelected,
+                    onClick = clickAction,
                 )
             }
         }
     }
+
+
 }

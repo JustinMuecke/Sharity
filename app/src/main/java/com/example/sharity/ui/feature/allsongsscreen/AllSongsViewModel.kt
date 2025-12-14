@@ -26,56 +26,100 @@ enum class RepeatMode {
 }
 class AllSongsViewModel(
     private val database: AppDatabase,
-    val player: ExoPlayer
+    val player: ExoPlayer // Still handles playback
 ) : ViewModel() {
-    val trackDao : TrackDao = database.trackDao()
-    private val _tracks = MutableStateFlow<List<Track>>(emptyList())
-    // This remains the original, unfiltered list of all tracks
-    val tracks = _tracks.asStateFlow()
-    // TODO Add playlist name and filter songs by playlist later
-    val _currentListName = MutableStateFlow("All Songs")
-    val currentListName = _currentListName.asStateFlow()
-    // 1. STATE FOR SEARCH QUERY
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    // 2. DERIVED FLOW FOR FILTERED TRACKS
-    // It combines the list of all tracks and the current search query
+    private val trackDao: TrackDao = database.trackDao()
+
+    // -------------------------------------------------------------------------
+    // 1. DATA AND FILTER STATE
+    // -------------------------------------------------------------------------
+    private val _tracks = MutableStateFlow<List<Track>>(emptyList())
+    val tracks = _tracks.asStateFlow() // Unfiltered Master List
+
+    private val _currentListName = MutableStateFlow("All Songs")
+    val currentListName = _currentListName.asStateFlow()
+
+    private val _searchQuery = MutableStateFlow("")
+    val currentQuery: StateFlow<String> = _searchQuery.asStateFlow()
+    // DERIVED FLOW FOR FILTERED TRACKS (The list the UI should render)
     val filteredTracks: StateFlow<List<Track>> = _tracks.combine(_searchQuery) { trackList, query ->
+        // ⬅️ NOTE: Filtering logic must use the filtered list, and you no longer need distinctBy
         if (query.isBlank()) {
-            trackList // If the query is empty, show all tracks
+            trackList
         } else {
-            // Filter by title, ignoring case
+            // Filter by title OR artist, ignoring case
             trackList.filter { track ->
-                track.title.contains(query, ignoreCase = true)
+                track.title.contains(query, ignoreCase = true) ||
+                        (track.artist ?: "").contains(query, ignoreCase = true)
             }
         }
-
-        // ⬅️ FIX: FILTER THE LIST TO KEEP ONLY UNIQUE TRACKS BASED ON contentUri
-        val uniqueTracks = trackList
-            .distinctBy { it.contentUri } // Keep only the first track for each unique contentUri
-
-        uniqueTracks
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
 
+
+    // -------------------------------------------------------------------------
+    // 2. MULTI-SELECTION STATE AND LOGIC (NEW)
+    // -------------------------------------------------------------------------
+    private val _selectedTracks = MutableStateFlow<Set<Track>>(emptySet())
+    val selectedTracks: StateFlow<Set<Track>> = _selectedTracks.asStateFlow()
+
+    private val _isSelectionMode = MutableStateFlow(false)
+    val isSelectionMode: StateFlow<Boolean> = _isSelectionMode.asStateFlow()
+
+    /**
+     * Toggles the selection state of a single track.
+     * Also updates the selection mode flag.
+     */
+    fun toggleSelect(track: Track) {
+        _selectedTracks.update { currentSet ->
+            val newSet = if (currentSet.contains(track)) {
+                currentSet - track
+            } else {
+                currentSet + track
+            }
+
+            // Update selection mode based on the new count
+            _isSelectionMode.value = newSet.isNotEmpty()
+
+            newSet
+        }
+    }
+
+    /** Clears all selections and exits selection mode. */
+    fun clearSelection() {
+        _selectedTracks.value = emptySet()
+        _isSelectionMode.value = false
+    }
+
+    /** Returns the currently selected tracks for use in creation/sharing. */
+    fun getSelectedTracks(): List<Track> {
+        return _selectedTracks.value.toList()
+    }
+
+
+    // -------------------------------------------------------------------------
+    // 3. PLAYBACK STATE AND LOGIC (EXISTING)
+    // -------------------------------------------------------------------------
+    private val _currentPosition = MutableStateFlow(0L)
+    val currentPosition = _currentPosition.asStateFlow()
+    private val _trackDuration = MutableStateFlow(0L)
+    val trackDuration = _trackDuration.asStateFlow()
+    private val _isPlaying = MutableStateFlow(false)
+    val isPlaying = _isPlaying.asStateFlow()
+    private val _currentTrack = MutableStateFlow<Track?>(null) // Now holds contentUri
+    val currentTrack = _currentTrack.asStateFlow()
     private val _nextTracks = MutableStateFlow<List<Track>>(emptyList())
     val nextTracks: StateFlow<List<Track>> = _nextTracks.asStateFlow()
-    private val _currentPosition = MutableStateFlow(0L) // Current time in ms
-    val currentPosition = _currentPosition.asStateFlow()
-
-    // ... (rest of your existing properties) ...
-
-    private val _trackDuration = MutableStateFlow(0L) // Total time in ms
-    val trackDuration = _trackDuration.asStateFlow()
-
     private val _isShuffleEnabled = MutableStateFlow(false)
     val isShuffleEnabled: StateFlow<Boolean> = _isShuffleEnabled.asStateFlow()
     private val _repeatMode = MutableStateFlow(value = RepeatMode.None)
     val repeatMode: StateFlow<RepeatMode> = _repeatMode.asStateFlow()
+
+
 
     init {
         loadTracks()
@@ -149,21 +193,12 @@ class AllSongsViewModel(
     }
 
     private fun loadTracks() {
-        // 3. Move to IO Thread (Background)
         viewModelScope.launch(Dispatchers.IO) {
-
-            // Now this is safe!
             val trackObjects = trackDao.getAllAsync()
-            // Update State (StateFlow is thread-safe)
             _tracks.value = trackObjects
         }
-        updateNextTracksFromPlayer()
     }
-    private val _isPlaying = MutableStateFlow(false)
-    val isPlaying = _isPlaying.asStateFlow()
 
-    private val _currentTrack = MutableStateFlow<String?>(null) // Now holds contentUri
-    val currentTrack = _currentTrack.asStateFlow()
 
     fun seekTo(positionMs: Long) {
         player.seekTo(positionMs)
@@ -198,7 +233,7 @@ class AllSongsViewModel(
             player.play()
 
             // F. Update UI immediately
-            _currentTrack.value = selectedTrack.contentUri // ⬅️ Save the unique URI        }
+            _currentTrack.value = selectedTrack // ⬅️ Save the unique URI        }
         }
     }
     fun togglePlayPause() {
@@ -220,7 +255,7 @@ class AllSongsViewModel(
         val currentList = _tracks.value
 
         if (index in currentList.indices) {
-            _currentTrack.value = currentList[index].contentUri // ⬅️ Save the unique URI
+            _currentTrack.value = currentList[index] // ⬅️ Save the unique URI
         }
     }
 
@@ -285,5 +320,40 @@ class AllSongsViewModel(
         }
 
         _nextTracks.value = futureTracks
+    }
+    /**
+     * Starts playback of a specific track within a defined list context.
+     *
+     * @param selectedTrack The track to start playing.
+     * @param contextList The list of tracks (e.g., a Playlist) that defines the playback order.
+     */
+    fun selectTrackInContext(selectedTrack: Track, contextList: List<Track>) {
+        val startIndex = contextList.indexOfFirst { it.contentUri == selectedTrack.contentUri }
+
+        if (startIndex != -1) {
+            val mediaItems = contextList.map { track ->
+                // (MediaItem creation logic remains the same)
+                MediaItem.Builder()
+                    .setUri(track.contentUri)
+                    .setMediaMetadata(
+                        MediaMetadata.Builder()
+                            .setTitle(track.title)
+                            .setArtist(track.artist ?: "Unknown")
+                            .build()
+                    )
+                    .build()
+            }
+
+            player.setMediaItems(mediaItems)
+            player.seekTo(startIndex, 0)
+            player.prepare()
+            player.play()
+
+            // Update UI state with the current URI
+            _currentTrack.value = selectedTrack
+        }
+        // Update the master _tracks list if you want the skipNext/Prev logic to also use this context list
+        // _tracks.value = contextList // CAUTION: This would break the AllSongsView list and needs careful management.
+        // A better approach is to only update the MediaQueue and let the listener handle the rest.
     }
 }
