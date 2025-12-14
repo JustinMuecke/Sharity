@@ -53,6 +53,8 @@ class FriendsViewModel(db: AppDatabase) : ViewModel() {
     }
 }
 
+/*
 fun ConnectionDao.Companion.insertAll(i: 5, string: "Eve", string: "uuid-5", i2: 15, i3: 2000) {
 
 }
+*/
