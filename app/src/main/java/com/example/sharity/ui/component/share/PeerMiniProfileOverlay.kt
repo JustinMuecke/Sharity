@@ -36,7 +36,7 @@ data class PeerSummary(
 @Composable
 fun PeerMiniProfileOverlay(
     visible: Boolean,
-    peer: PeerSummary,
+    peer: PeerSummary?,
     onDismiss: () -> Unit,
     onOpenPeer: () -> Unit,
     modifier: Modifier = Modifier
@@ -79,7 +79,7 @@ fun PeerMiniProfileOverlay(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
-                        text = peer.displayName,
+                        text = peer?.displayName?: "Unknown User",
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.Black
                     )
@@ -88,9 +88,9 @@ fun PeerMiniProfileOverlay(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        StatPill(label = "Songs", value = peer.songs.toString())
-                        StatPill(label = "Sent", value = peer.sent.toString())
-                        StatPill(label = "Received", value = peer.received.toString())
+                        StatPill(label = "Songs", value = peer?.songs.toString())
+                        StatPill(label = "Sent", value = peer?.sent.toString())
+                        StatPill(label = "Received", value = peer?.received.toString())
                     }
 
                     Spacer(modifier = Modifier.height(4.dp))
