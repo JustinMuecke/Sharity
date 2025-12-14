@@ -20,18 +20,41 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink // Needed for NFC Deep Link fix
 import com.example.sharity.data.device.MP3Indexer
 import com.example.sharity.data.device.NfcClient
+import com.example.sharity.data.local.AppDatabase
 import com.example.sharity.data.wrapper.db
 import com.example.sharity.data.wrapper.userRepo
 import com.example.sharity.data.wrapper.NfcController
+import com.example.sharity.domain.model.Connection
+import com.example.sharity.ui.component.AudioControl
+import com.example.sharity.ui.component.navBar.NavBar
+import com.example.sharity.ui.component.playlist.SongSelectorModalContent // Assuming this is correct
+import com.example.sharity.ui.component.share.PeerMiniProfileOverlay
 import com.example.sharity.ui.feature.ProfileScreen
+import com.example.sharity.ui.feature.allsongsscreen.AllSongsView
+import com.example.sharity.ui.feature.allsongsscreen.AllSongsViewModel
+import com.example.sharity.ui.feature.friends.FriendsScreen
+import com.example.sharity.ui.feature.friends.FriendsViewModel
+import com.example.sharity.ui.feature.history.HistoryScreen
+import com.example.sharity.ui.feature.history.HistoryViewModel
 import com.example.sharity.ui.feature.homescreen.HomeScreen
 import com.example.sharity.ui.feature.homescreen.HomeScreenViewModel
 import kotlin.uuid.ExperimentalUuidApi
@@ -55,9 +78,33 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
+import com.example.sharity.ui.feature.peersongs.PeerSongsScreen
+import com.example.sharity.ui.feature.peersongs.PeerSongsViewModel
+import com.example.sharity.ui.feature.playlistscreen.PlaylistView
+import com.example.sharity.ui.feature.playlistscreen.PlaylistViewModelFactory
+import com.example.sharity.ui.feature.playlistselection.PlaylistSelectionScreen
+import com.example.sharity.ui.feature.playlistselection.PlaylistSelectionViewModel
+import com.example.sharity.ui.feature.playlistscreen.PlaylistViewModel
+import com.example.sharity.ui.theme.SharityTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.random.Random
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
-
-enum class RootScreen { HOME, PROFILE, PEER_SONGS }
+object RootDestinations {
+    // ... (All your destination objects remain the same)
+    const val HOME = "home"
+    const val PROFILE = "profile"
+    const val NFC = "nfc" // Destination for NFC handling
+    const val HISTORY = "history"
+    const val FRIENDS = "friends"
+    const val PLAYLISTS = "playlists" // Playlist Selection Screen
+    const val PLAYLIST_VIEW = "playlist_view/{playlistId}" // Individual Playlist View
+    const val PEER = "peer"
+    const val ALL_SONGS = "all_songs"
+}
 
 // FIXME: Move to viewmodel, to prevent Memory leak
 private lateinit var nfcController: NfcController
@@ -74,7 +121,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @OptIn(ExperimentalUuidApi::class)
+    @OptIn(ExperimentalUuidApi::class, ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -94,43 +141,131 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
+            val navController = rememberNavController()
+
+            // --- MODAL STATE SETUP ---
+            val showCreatePlaylistModal = rememberSaveable { mutableStateOf(false) }
+            val scope = rememberCoroutineScope() // Should be here in setContent
+            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            // -------------------------
+
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            val showBackButton = navController.previousBackStackEntry != null
+            val currentRoute = navBackStackEntry?.destination?.route
+
+            // --- VIEW MODEL SETUP ---
+            val allSongsViewModel = viewModel<AllSongsViewModel>(
+                factory = object : ViewModelProvider.Factory {
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        @Suppress("UNCHECKED_CAST")
+                        return AllSongsViewModel(db, exoPlayer) as T
+                    }
+                }
+            )
+            val playlistSelectionViewModel = viewModel<PlaylistSelectionViewModel>(
+                factory = object : ViewModelProvider.Factory {
+                    override fun <T: ViewModel> create(modelClass: Class<T>):T {
+                        @Suppress("UNCHECKED_CAST") // Added cast suppression for safety
+                        return PlaylistSelectionViewModel(db) as T
+                    }
+                }
+            )
+
+
+            // ------------------------
+
             SharityTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-
-                    var currentScreen by remember { mutableStateOf(RootScreen.HOME) }
-
-                    val homeViewModel = viewModel<HomeScreenViewModel>(
-                        factory = object : ViewModelProvider.Factory {
-                            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                                @Suppress("UNCHECKED_CAST")
-                                return HomeScreenViewModel(db(), exoPlayer) as T
-                            }
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    topBar = {
+                        val screenTitle = when (currentRoute) { // Use currentRoute here
+                            RootDestinations.HOME -> "My Music Library"
+                            // Add more cases for other routes
+                            else -> "Sharity"
                         }
-                    )
+                        NavBar(
+                            showBack = showBackButton,
+                            onBackClick = { navController.navigateUp() },
+                            onNfcClick = { navController.navigate(RootDestinations.NFC) },
+                            onProfileClick = { navController.navigate(RootDestinations.PROFILE) },
+                            onOpenPeer = { /* maybe unused now */ }
+                        )
+                    },
+                    bottomBar = {
+                        if (allSongsViewModel.currentTrack.collectAsState().value != null) {
+                            AudioControl(allSongsViewModel)
+                        }
+                        // Add your persistent navigation bar here if it's not in topBar
+                        // NavBar is in topBar, so this is likely just the AudioControl
+                    }
+                ) { innerPadding -> // innerPadding handles topBar and bottomBar
 
-                    when (currentScreen) {
+                    // 1. NAV HOST (The main screen content)
+                    NavHost(
+                        navController = navController,
+                        startDestination = RootDestinations.HOME,
+                        modifier = Modifier.fillMaxSize() // Fill the space provided by Scaffold
+                    ) {
 
-                        RootScreen.HOME -> {
+                        // HOME
+                        composable(RootDestinations.HOME) {
                             HomeScreen(
-                                viewModel = homeViewModel,
-                                modifier = Modifier.padding(innerPadding),
-                                onProfileClick = { currentScreen = RootScreen.PROFILE },
-                                onOpenPeer = { currentScreen = RootScreen.PEER_SONGS }
+                                // Pass the required padding to the content's LazyColumn/Container
+                                paddingValues = innerPadding,
+                                db = db,
+                                exoPlayer = exoPlayer,
+                                allSongsViewModel = allSongsViewModel,
+                                onProfileClick = { navController.navigate(RootDestinations.PROFILE) },
+                                onHistoryClick = { navController.navigate(RootDestinations.HISTORY) },
+                                onFriendsClick = { navController.navigate(RootDestinations.FRIENDS) },
+                                onPlaylistsClick = { navController.navigate(RootDestinations.PLAYLISTS) },
+                                onListClick = { /* no-op */ },
+                                onOpenPeer = {navController.navigate(RootDestinations.PEER)},
+                                onAllsongsClick = { navController.navigate(RootDestinations.ALL_SONGS)},
+                                modifier = Modifier.fillMaxSize()
                             )
                         }
-
-                        RootScreen.PROFILE -> {
+                        composable(RootDestinations.ALL_SONGS) {
+                            AllSongsView(
+                                viewModel = allSongsViewModel,
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        }
+                        composable(RootDestinations.PROFILE) {
+                            // Create your profile screen here
                             ProfileScreen(
-                                modifier = Modifier.padding(innerPadding),
-                                onBackClick = { currentScreen = RootScreen.HOME },
-                                onOpenPeer = { currentScreen = RootScreen.PEER_SONGS }
+                                paddingValues = innerPadding,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        // PLAYLIST SELECTION
+                        composable(RootDestinations.PLAYLISTS) {
+                            PlaylistSelectionScreen(
+                                onViewPlaylist = { playlistId ->
+                                    navController.navigate("playlist_view/$playlistId")
+                                },
+                                // Pass the actual ViewModel instance
+                                viewModel = playlistSelectionViewModel,
+                                // Pass the handler to open the modal
+                                onCreateNewPlaylist = { showCreatePlaylistModal.value = true },
+                                // Pass innerPadding, but PlaylistSelectionScreen should handle it.
+                                // If your screen uses a LazyColumn, you need to be careful with padding.
+                                paddingValues = innerPadding,
+                                modifier = Modifier.fillMaxSize()
                             )
                         }
 
-                        RootScreen.PEER_SONGS -> {
+
+                        // PEER/NFC SCREEN (Added Deep Link fix here)
+                        composable(
+                            route = RootDestinations.NFC,
+                            deepLinks = listOf(
+                                navDeepLink { uriPattern = "android-app://androidx.navigation/nfc" }
+                            )
+                        ) {
                             val peerSongsViewModel = viewModel<PeerSongsViewModel>()
                             val state = peerSongsViewModel.uiState.collectAsState().value
-
+                            /*
                             PeerSongsScreen(
                                 peerName = state.peerName,
                                 tracks = state.tracks,
@@ -138,25 +273,135 @@ class MainActivity : ComponentActivity() {
                                 onToggleSelect = { track -> peerSongsViewModel.toggleSelect(track) },
                                 onCancel = {
                                     peerSongsViewModel.clearSelection()
-                                    currentScreen = RootScreen.HOME
+                                    navController.navigateUp()
                                 },
                                 onFinished = {
-                                    // TODO: next step = navigate to Trade/Confirm screen
-                                    // For now: keep it simple and go back home
                                     val selected = peerSongsViewModel.getSelectedTracks()
-                                    // later: pass selected to next screen
                                     peerSongsViewModel.clearSelection()
-                                    currentScreen = RootScreen.HOME
+                                    navController.navigateUp()
                                 },
-                                modifier = Modifier.padding(innerPadding)
+                                */
+                            PeerMiniProfileOverlay(
+                                false,
+                                null,
+                                onDismiss = {},
+                                onOpenPeer = {},
+                                modifier = Modifier.fillMaxSize()
+                            )
+
+                        }
+                        composable(RootDestinations.FRIENDS) {
+                            val friendsViewModel = viewModel<FriendsViewModel>(
+                                factory = object : ViewModelProvider.Factory {
+                                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                                        @Suppress("UNCHECKED_CAST")
+                                        return FriendsViewModel(db) as T
+                                    }
+                                }
+                            )
+
+                            FriendsScreen(
+                                viewModel = friendsViewModel,
+                                paddingValues = innerPadding,
+                                modifier = Modifier.fillMaxSize()
                             )
                         }
-                    }
-                }
-            }
-        }
-    }
+                        composable(RootDestinations.HISTORY) {
+                            val historyViewModel = viewModel<HistoryViewModel>(
+                                factory = object : ViewModelProvider.Factory {
+                                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                                        @Suppress("UNCHECKED_CAST")
+                                        return HistoryViewModel(db) as T
+                                    }
+                                }
+                            )
 
+                            HistoryScreen(
+                                viewModel = historyViewModel,
+                                paddingValues = innerPadding,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        // ... (PEER destination logic can be simplified if it routes to NFC)
+                        composable(route= RootDestinations.PEER) {
+                            // If PEER is the same as NFC for now, you can just navigate:
+                            navController.navigate(RootDestinations.NFC)
+                        }
+
+                        composable(
+                            route = "playlist_view/{playlistId}",
+                            arguments = listOf(
+                                navArgument("playlistId") {
+                                    type = NavType.IntType  // Specify it's an Int, not a String
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val playlistId = backStackEntry.arguments?.getInt("playlistId") ?: 0
+
+                            val playlistViewModel = viewModel<PlaylistViewModel>(
+                                factory = object : ViewModelProvider.Factory {
+                                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                                        @Suppress("UNCHECKED_CAST")
+                                        return PlaylistViewModel(db, playlistId) as T
+                                    }
+                                }
+                            )
+                            PlaylistView(
+                                playlistId = playlistId,
+                                onSongClick = { clickedSong ->
+                                    val playlistTrackList = playlistViewModel.currentPlaylistTracks
+                                    allSongsViewModel.selectTrackInContext(clickedSong, playlistTrackList)
+                                },
+                                viewModel = playlistViewModel,
+                                paddingValues = innerPadding
+                            )
+
+                        } // End NavHost
+                } // End Scaffold Content Lambda
+
+                // --- 2. MODAL BOTTOM SHEET (Sits above the Scaffold) ---
+                if (showCreatePlaylistModal.value) {
+                    ModalBottomSheet(
+                        onDismissRequest = {
+                            scope.launch { sheetState.hide() }.invokeOnCompletion { showCreatePlaylistModal.value = false }
+                        },
+                        sheetState = sheetState,
+                    ) {
+                        SongSelectorModalContent(
+                            allSongsViewModel = allSongsViewModel,
+                            onClose = {
+                                scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                    showCreatePlaylistModal.value = false
+                                }
+                            },
+                            onPlaylistCreated = {name, selectedSongs ->
+                                // 1. Launch a coroutine for the suspend function call
+                                scope.launch {
+                                    // 2. Call the ViewModel to save the playlist and get the real ID
+                                    // NOTE: The name "New Playlist" is a placeholder. You'll need to collect a name from the UI later.
+                                    val newPlaylistId = playlistSelectionViewModel.createPlaylistWithTracks(
+                                        name = name,
+                                        tracks = selectedSongs // Assuming 'selectedSongs' are actually 'Track' objects
+                                    )
+                                    Log.e("MainActivity", "Created playlist with ID: $newPlaylistId")
+                                    Log.e("MainActivity", "Navigating to: playlist_view/$newPlaylistId")
+                                    // Dismiss Modal first
+                                    sheetState.hide()
+
+                                    // 3. Navigation after dismissal
+                                    if (!sheetState.isVisible) {
+                                        showCreatePlaylistModal.value = false
+                                        // **NAVIGATE TO THE REAL NEW PLAYLIST ID**
+                                        navController.navigate("playlist_view/$newPlaylistId")
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    } // End ModalBottomSheet conditional
+                } // End SharityTheme
+            } // End setContent
+        }   }// End onCreate
     override fun onResume() {
         super.onResume()
         nfcController.onResume()
@@ -392,3 +637,37 @@ private fun logUuidState(
     )
     Log.d("UUID_TEST", "================================")
 }
+    // ... (onResume, onPause, onNewIntent, logNfcMessages remain the same)
+}
+suspend fun generateTestConnections(db: AppDatabase) {
+    withContext(Dispatchers.IO) {
+        val connectionDao = db.connectionDao()
+
+        val names = listOf(
+            "Alice", "Bob", "Charlie", "Diana", "Eve",
+            "Frank", "Grace", "Henry", "Ivy", "Jack"
+        )
+
+        val connections = mutableListOf<Connection>()
+
+        // Generate 30 test connections
+        for (i in 1..30) {
+            val randomName = names.random()
+            val uuid = "uuid-$randomName-${Random.nextInt(1000)}"
+
+            connections.add(
+                Connection(
+                    connectionID = i,
+                    username = randomName,
+                    connectionUuid = uuid,
+                    tracksSent = Random.nextInt(0, 20),
+                    tracksReceived = Random.nextInt(0, 20)
+                )
+            )
+        }
+
+        connectionDao.insertAll(*connections.toTypedArray())
+    }
+}
+
+// Then call it from your MainActivity's onCreat

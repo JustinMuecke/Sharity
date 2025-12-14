@@ -57,7 +57,6 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.androidx.material3)
     implementation(libs.androidx.media3.exoplayer)
-    implementation(libs.androidx.room.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -69,9 +68,17 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:$media3Version")
     implementation("androidx.media3:media3-ui:$media3Version")
     implementation("androidx.media3:media3-session:$media3Version")
+    implementation("androidx.navigation:navigation-compose:2.7.5") // Check for latest version
 
+    // ViewModel Compose (already likely included, but just in case)
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2") // Check for latest version
+
+    // Material 3 (already likely included)
+    implementation("androidx.compose.material3:material3")
     implementation("androidx.room:room-runtime:2.8.4")
     ksp("androidx.room:room-compiler:2.8.4")
     implementation("androidx.sqlite:sqlite:2.6.2")
     implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 }

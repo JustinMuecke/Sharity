@@ -7,7 +7,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
@@ -41,6 +40,25 @@ import com.example.sharity.ui.theme.DustyPurple
 import com.example.sharity.ui.theme.GrapeGlimmer
 import com.example.sharity.ui.theme.SheerLilac
 
+import androidx.compose.ui.graphics.vector.ImageVector
+
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.Nightlight
+
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+
 data class UserStats(
     val songs: Int,
     val sent: Int,
@@ -48,7 +66,8 @@ data class UserStats(
 )
 
 data class Badge(
-    val label: String
+    val label: String,
+    val icon: ImageVector
 )
 
 enum class ProfileImageOption(@DrawableRes val resId: Int) {
@@ -60,15 +79,14 @@ enum class ProfileImageOption(@DrawableRes val resId: Int) {
 @Composable
 fun ProfileScreen(
     modifier: Modifier = Modifier,
-    onBackClick: () -> Unit,
-    onOpenPeer: () -> Unit
+    paddingValues : PaddingValues,
 ) {
     val bioState = remember { mutableStateOf("Tell us about your music taste, last concert, etc.") }
     val stats = UserStats(songs = 42, sent = 10, received = 5)
     val badges = listOf(
-        Badge("First Share"),
-        Badge("10 Songs"),
-        Badge("Night Listener")
+        Badge("First Share", Icons.Filled.Bolt),
+        Badge("10 Songs", Icons.Filled.LibraryMusic),
+        Badge("Night Trader", Icons.Filled.Nightlight)
     )
 
     val userNameState = remember { mutableStateOf("Your Name") }
@@ -96,15 +114,6 @@ fun ProfileScreen(
         color = MaterialTheme.colorScheme.background
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-
-            NavBar(
-                showBack = true,
-                onBackClick = onBackClick,
-                onNfcClick = { showPeerOverlay.value = true },
-                onProfileClick = { /* already on profile */ },
-                modifier = Modifier.align(Alignment.TopCenter)
-            )
-
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -144,15 +153,6 @@ fun ProfileScreen(
                 BadgesSection(badges = badges)
             }
 
-            PeerMiniProfileOverlay(
-                visible = showPeerOverlay.value,
-                peer = peer,
-                onDismiss = { showPeerOverlay.value = false },
-                onOpenPeer = {
-                    showPeerOverlay.value = false
-                    onOpenPeer()
-                }
-            )
 
             if (isAvatarDialogOpen.value) {
                 AvatarPickerDialog(
@@ -532,6 +532,7 @@ fun BioSection(
     }
 }
 
+
 @Composable
 fun BadgesSection(
     badges: List<Badge>,
@@ -540,13 +541,20 @@ fun BadgesSection(
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = "Badges",
-            style = MaterialTheme.typography.titleMedium.copy(color = MaterialTheme.colorScheme.onSurface)
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             badges.forEach { badge ->
-                BadgeChip(label = badge.label)
+                BadgeChip(
+                    label = badge.label,
+                    icon = badge.icon
+                )
             }
         }
     }
@@ -555,20 +563,42 @@ fun BadgesSection(
 @Composable
 fun BadgeChip(
     label: String,
+    icon: ImageVector,
     modifier: Modifier = Modifier
 ) {
-    Box(
+    Row(
         modifier = modifier
-            .background(color = AccentDeepIndigo, shape = RoundedCornerShape(50))
-            .padding(horizontal = 10.dp, vertical = 6.dp),
-        contentAlignment = Alignment.Center
-    ) {
+            .shadow(
+                elevation = 2.dp,
+                shape = RoundedCornerShape(999.dp),
+                ambientColor = GrapeGlimmer.copy(alpha = 0.25f),
+                spotColor = GrapeGlimmer.copy(alpha = 0.25f)
+            )
+            // Outline
+            .border(
+                width = 1.dp,
+                color = GrapeGlimmer.copy(alpha = 0.6f),
+                shape = RoundedCornerShape(999.dp)
+            )
+            // filling
+            .background(
+                color = SheerLilac,
+                shape = RoundedCornerShape(999.dp)
+            )
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ){
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color.Black,
+            modifier = Modifier.size(16.dp)
+        )
         Text(
             text = label,
-            style = MaterialTheme.typography.labelMedium.copy(
-                color = SheerLilac,
-                fontSize = 12.sp
-            )
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.Black
         )
     }
 }
