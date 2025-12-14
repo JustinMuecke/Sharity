@@ -53,10 +53,10 @@ class FriendsViewModel(db: AppDatabase) : ViewModel() {
     }
 
     private fun demoConnections(): List<Connection> = listOf(
-        Connection(3, "Chris", "uuid-3", 200, 180),
-        Connection(4, "Dana", "uuid-4", 20, 0),
-        Connection(5, "Eve", "uuid-5", 15, 2000),
-        Connection(7, "John", "uuid-7", 1, 4)
+        Connection(3.toString(), "Chris", "uuid-3", 200, 180),
+        Connection(4.toString(), "Dana", "uuid-4", 20, 0),
+        Connection(5.toString(), "Eve", "uuid-5", 15, 2000),
+        Connection(7.toString(), "John", "uuid-7", 1, 4)
     )
 }
 

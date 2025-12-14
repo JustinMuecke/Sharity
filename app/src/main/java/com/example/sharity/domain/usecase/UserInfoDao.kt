@@ -27,7 +27,7 @@ interface UserInfoDao {
             SELECT 'uuid', :value
             WHERE NOT EXISTS (SELECT 1 FROM userInfos WHERE `key` = 'uuid')
          """)
-    fun createValueIfEmpty(value: String)
+    fun createUuidIfEmpty(value: String)
 
     @Query("""
             SELECT value
@@ -35,7 +35,7 @@ interface UserInfoDao {
             WHERE `key` = :value
             LIMIT 1
         """)
-    fun getValue(value: String) : String
+    fun getValue(value: String) : String?
 
     @Query("""
             INSERT OR REPLACE INTO userInfos (`key`, value)
