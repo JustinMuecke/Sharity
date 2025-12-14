@@ -25,6 +25,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink // Needed for NFC Deep Link fix
+import com.example.sharity.data.device.MP3IndexerManager
 import com.example.sharity.data.device.MP3Indexer
 import com.example.sharity.data.device.NfcClient
 import com.example.sharity.data.local.AppDatabase
@@ -44,10 +45,8 @@ import com.example.sharity.ui.feature.friends.FriendsViewModel
 import com.example.sharity.ui.feature.history.HistoryScreen
 import com.example.sharity.ui.feature.history.HistoryViewModel
 import com.example.sharity.ui.feature.homescreen.HomeScreen
-import com.example.sharity.ui.feature.peersongs.PeerSongsScreen
 import com.example.sharity.ui.feature.peersongs.PeerSongsViewModel
 import com.example.sharity.ui.feature.playlistscreen.PlaylistView
-import com.example.sharity.ui.feature.playlistscreen.PlaylistViewModelFactory
 import com.example.sharity.ui.feature.playlistselection.PlaylistSelectionScreen
 import com.example.sharity.ui.feature.playlistselection.PlaylistSelectionViewModel
 import com.example.sharity.ui.feature.playlistscreen.PlaylistViewModel
@@ -78,6 +77,8 @@ private val nfcClient = NfcClient()
 
 class MainActivity : ComponentActivity() {
 
+    private lateinit var indexerManager: MP3IndexerManager
+
     @OptIn(ExperimentalUuidApi::class, ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -86,22 +87,24 @@ class MainActivity : ComponentActivity() {
         nfcController = NfcController(this) { tag -> logNfcMessages(tag) }
         val userRepo = this.applicationContext.userRepo()
         val db = db()
-       // lifecycleScope.launch {
+        // lifecycleScope.launch {
         //    generateTestConnections(db)
         //    Log.d("TestData", "Generated 30 test connections!")
-       // }
+        // }
         val exoPlayer = ExoPlayer.Builder(applicationContext).build()
+
+        val indexer = MP3Indexer(
+            applicationContext,
+            db,
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+        )
+        indexerManager = MP3IndexerManager(indexer)
+        indexerManager.startIndex()
 
         // Indexer setup remains the same
         Thread {
             try {
                 db.userInfoDao().createValueIfEmpty(Uuid.random().toHexString())
-                val indexer = MP3Indexer(
-                    applicationContext,
-                    db,
-                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-                )
-                indexer.index()
             } catch (e: Exception) {
                 Log.e("ERROR", "MP3Indexer failed", e)
             }
@@ -131,7 +134,7 @@ class MainActivity : ComponentActivity() {
             )
             val playlistSelectionViewModel = viewModel<PlaylistSelectionViewModel>(
                 factory = object : ViewModelProvider.Factory {
-                    override fun <T: ViewModel> create(modelClass: Class<T>):T {
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         @Suppress("UNCHECKED_CAST") // Added cast suppression for safety
                         return PlaylistSelectionViewModel(db) as T
                     }
@@ -187,8 +190,8 @@ class MainActivity : ComponentActivity() {
                                 onFriendsClick = { navController.navigate(RootDestinations.FRIENDS) },
                                 onPlaylistsClick = { navController.navigate(RootDestinations.PLAYLISTS) },
                                 onListClick = { /* no-op */ },
-                                onOpenPeer = {navController.navigate(RootDestinations.PEER)},
-                                onAllsongsClick = { navController.navigate(RootDestinations.ALL_SONGS)},
+                                onOpenPeer = { navController.navigate(RootDestinations.PEER) },
+                                onAllsongsClick = { navController.navigate(RootDestinations.ALL_SONGS) },
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
@@ -290,7 +293,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         // ... (PEER destination logic can be simplified if it routes to NFC)
-                        composable(route= RootDestinations.PEER) {
+                        composable(route = RootDestinations.PEER) {
                             // If PEER is the same as NFC for now, you can just navigate:
                             navController.navigate(RootDestinations.NFC)
                         }
@@ -317,49 +320,60 @@ class MainActivity : ComponentActivity() {
                                 playlistId = playlistId,
                                 onSongClick = { clickedSong ->
                                     val playlistTrackList = playlistViewModel.currentPlaylistTracks
-                                    allSongsViewModel.selectTrackInContext(clickedSong, playlistTrackList)
+                                    allSongsViewModel.selectTrackInContext(
+                                        clickedSong,
+                                        playlistTrackList
+                                    )
                                 },
                                 viewModel = playlistViewModel,
                                 paddingValues = innerPadding
                             )
 
                         } // End NavHost
-                } // End Scaffold Content Lambda
+                    } // End Scaffold Content Lambda
 
-                // --- 2. MODAL BOTTOM SHEET (Sits above the Scaffold) ---
-                if (showCreatePlaylistModal.value) {
-                    ModalBottomSheet(
-                        onDismissRequest = {
-                            scope.launch { sheetState.hide() }.invokeOnCompletion { showCreatePlaylistModal.value = false }
-                        },
-                        sheetState = sheetState,
-                    ) {
-                        SongSelectorModalContent(
-                            allSongsViewModel = allSongsViewModel,
-                            onClose = {
-                                scope.launch { sheetState.hide() }.invokeOnCompletion {
-                                    showCreatePlaylistModal.value = false
-                                }
+                    // --- 2. MODAL BOTTOM SHEET (Sits above the Scaffold) ---
+                    if (showCreatePlaylistModal.value) {
+                        ModalBottomSheet(
+                            onDismissRequest = {
+                                scope.launch { sheetState.hide() }
+                                    .invokeOnCompletion { showCreatePlaylistModal.value = false }
                             },
-                            onPlaylistCreated = {name, selectedSongs ->
-                                // 1. Launch a coroutine for the suspend function call
-                                scope.launch {
-                                    // 2. Call the ViewModel to save the playlist and get the real ID
-                                    // NOTE: The name "New Playlist" is a placeholder. You'll need to collect a name from the UI later.
-                                    val newPlaylistId = playlistSelectionViewModel.createPlaylistWithTracks(
-                                        name = name,
-                                        tracks = selectedSongs // Assuming 'selectedSongs' are actually 'Track' objects
-                                    )
-                                    Log.e("MainActivity", "Created playlist with ID: $newPlaylistId")
-                                    Log.e("MainActivity", "Navigating to: playlist_view/$newPlaylistId")
-                                    // Dismiss Modal first
-                                    sheetState.hide()
-
-                                    // 3. Navigation after dismissal
-                                    if (!sheetState.isVisible) {
+                            sheetState = sheetState,
+                        ) {
+                            SongSelectorModalContent(
+                                allSongsViewModel = allSongsViewModel,
+                                onClose = {
+                                    scope.launch { sheetState.hide() }.invokeOnCompletion {
                                         showCreatePlaylistModal.value = false
-                                        // **NAVIGATE TO THE REAL NEW PLAYLIST ID**
-                                        navController.navigate("playlist_view/$newPlaylistId")
+                                    }
+                                },
+                                onPlaylistCreated = { name, selectedSongs ->
+                                    // 1. Launch a coroutine for the suspend function call
+                                    scope.launch {
+                                        // 2. Call the ViewModel to save the playlist and get the real ID
+                                        // NOTE: The name "New Playlist" is a placeholder. You'll need to collect a name from the UI later.
+                                        val newPlaylistId =
+                                            playlistSelectionViewModel.createPlaylistWithTracks(
+                                                name = name,
+                                                tracks = selectedSongs // Assuming 'selectedSongs' are actually 'Track' objects
+                                            )
+                                        Log.e(
+                                            "MainActivity",
+                                            "Created playlist with ID: $newPlaylistId"
+                                        )
+                                        Log.e(
+                                            "MainActivity",
+                                            "Navigating to: playlist_view/$newPlaylistId"
+                                        )
+                                        // Dismiss Modal first
+                                        sheetState.hide()
+
+                                        // 3. Navigation after dismissal
+                                        if (!sheetState.isVisible) {
+                                            showCreatePlaylistModal.value = false
+                                            // **NAVIGATE TO THE REAL NEW PLAYLIST ID**
+                                            navController.navigate("playlist_view/$newPlaylistId")
                                         }
                                     }
                                 }
@@ -368,7 +382,9 @@ class MainActivity : ComponentActivity() {
                     } // End ModalBottomSheet conditional
                 } // End SharityTheme
             } // End setContent
-        }   }// End onCreate
+        }
+    }// End onCreate
+
     override fun onResume() {
         super.onResume()
         nfcController.onResume()
@@ -403,6 +419,7 @@ class MainActivity : ComponentActivity() {
     }
     // ... (onResume, onPause, onNewIntent, logNfcMessages remain the same)
 }
+
 suspend fun generateTestConnections(db: AppDatabase) {
     withContext(Dispatchers.IO) {
         val connectionDao = db.connectionDao()
