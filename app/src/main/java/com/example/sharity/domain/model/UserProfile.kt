@@ -1,5 +1,7 @@
 package com.example.sharity.domain.model
 
+import java.util.UUID
+
 data class UserProfile(
     val uuid: String,
     val playerName: String,
@@ -11,6 +13,8 @@ data class UserProfile(
     //val badges: List<Badge> [WIP]
 )
 fun UserProfile.toNfcPayload(): ByteArray {
-    return "$uuid,$playerName,$font"
+    val port = "8888"
+    val sessionToken = UUID.randomUUID().toString()
+    return "$uuid,$playerName,$sessionToken,$port,$font"
         .toByteArray(Charsets.UTF_8)
 }
