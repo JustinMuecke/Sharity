@@ -12,9 +12,12 @@ material3 = "1.4.0"
 ksp = "2.0.21-1.0.28"
 appcompat = "1.7.1"
 media3Exoplayer = "1.8.0"
-roomKtx = "2.8.4"
+composeAnimation = "1.10.0"
+room = "2.8.4"
 
 [libraries]
+room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+compose-animation-core = { module = "androidx.compose.animation:animation-core", version.ref = "composeAnimation" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
@@ -33,7 +36,6 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 
 androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "media3Exoplayer" }
-androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

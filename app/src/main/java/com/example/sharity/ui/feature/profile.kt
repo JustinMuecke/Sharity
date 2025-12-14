@@ -60,8 +60,6 @@ enum class ProfileImageOption(@DrawableRes val resId: Int) {
 @Composable
 fun ProfileScreen(
     modifier: Modifier = Modifier,
-    onBackClick: () -> Unit,
-    onOpenPeer: () -> Unit
 ) {
     val bioState = remember { mutableStateOf("Tell us about your music taste, last concert, etc.") }
     val stats = UserStats(songs = 42, sent = 10, received = 5)
@@ -96,15 +94,6 @@ fun ProfileScreen(
         color = MaterialTheme.colorScheme.background
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-
-            NavBar(
-                showBack = true,
-                onBackClick = onBackClick,
-                onNfcClick = { showPeerOverlay.value = true },
-                onProfileClick = { /* already on profile */ },
-                modifier = Modifier.align(Alignment.TopCenter)
-            )
-
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -144,15 +133,6 @@ fun ProfileScreen(
                 BadgesSection(badges = badges)
             }
 
-            PeerMiniProfileOverlay(
-                visible = showPeerOverlay.value,
-                peer = peer,
-                onDismiss = { showPeerOverlay.value = false },
-                onOpenPeer = {
-                    showPeerOverlay.value = false
-                    onOpenPeer()
-                }
-            )
 
             if (isAvatarDialogOpen.value) {
                 AvatarPickerDialog(
