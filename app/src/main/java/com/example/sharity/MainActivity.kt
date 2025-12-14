@@ -75,9 +75,9 @@ object RootDestinations {
 private lateinit var nfcController: NfcController
 private val nfcClient = NfcClient()
 
-class MainActivity : ComponentActivity() {
+lateinit var indexerManager: MP3IndexerManager
 
-    private lateinit var indexerManager: MP3IndexerManager
+class MainActivity : ComponentActivity() {
 
     @OptIn(ExperimentalUuidApi::class, ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
