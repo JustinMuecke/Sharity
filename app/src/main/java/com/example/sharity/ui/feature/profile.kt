@@ -100,7 +100,7 @@ fun ProfileScreen(
                     .fillMaxSize()
                     .padding(horizontal = 20.dp)
                     .padding(top = 72.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
+                verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 ProfileHeader(
                     nameState = userNameState,
