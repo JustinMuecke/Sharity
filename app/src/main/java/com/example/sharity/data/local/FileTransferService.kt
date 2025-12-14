@@ -45,7 +45,7 @@ class FileTransferService {
     ) = withContext(Dispatchers.IO) {
         runCatching {
             ServerSocket(port).use { serverSocket ->
-                serverSocket.soTimeout = 5_000
+                serverSocket.soTimeout = 10_000
                 Log.d("FILE_TRANSFER", "Waiting for files on port $port")
                 try {
                     serverSocket.accept().use { socket ->
@@ -120,7 +120,7 @@ class FileTransferService {
         runCatching {
             ServerSocket(port).use { serverSocket ->
                 ServerSocket(port).use { serverSocket ->
-                    serverSocket.soTimeout = 5_000
+                    serverSocket.soTimeout = 10_000
                     Log.d("FILE_TRANSFER", "Waiting for connection on port $port")
 
                     try {

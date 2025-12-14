@@ -1,6 +1,7 @@
 package com.example.sharity
 
 import android.content.BroadcastReceiver
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -8,6 +9,7 @@ import android.net.Uri
 import android.nfc.Tag
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -538,6 +540,7 @@ class MainActivity : ComponentActivity() {
             )
 
             delay(500)
+
             handleFileTransferOnce(
                 hostAddress,
                 8889,
@@ -573,12 +576,25 @@ class MainActivity : ComponentActivity() {
             fileTransfer.sendFiles(hostAddress, port, filesToSend)
             filesToSend.forEach { it.delete() }
         } else {
-            val result = withTimeoutOrNull(2_000) {
+            val result = withTimeoutOrNull(10_000) {
                 fileTransfer.receiveFiles(port, filesDir)
+                    .onSuccess { receivedFiles ->
+                        receivedFiles?.forEach { receivedFile ->
+                            Log.d("TRANSFER", "File received: ${receivedFile.absolutePath}")
+
+                            val mediaUri = applicationContext
+                                .saveAudioToMediaStore(receivedFile)
+
+                            Log.d("MEDIA", "Saved to MediaStore: $mediaUri")
+
+                            receivedFile.delete()
+                        }
+                    }
+
             }
 
             if (result == null) {
-                Log.d("TRANSFER", "Receive timed out after 2s")
+                Log.d("TRANSFER", "Receive timed out after 10s")
             }
         }
     }
@@ -616,6 +632,42 @@ class MainActivity : ComponentActivity() {
 
         return tempFile
     }
+
+
+    fun Context.saveAudioToMediaStore(
+        sourceFile: File,
+        displayName: String = sourceFile.name
+    ): Uri? {
+        val resolver = contentResolver
+
+        val values = ContentValues().apply {
+            put(MediaStore.Audio.Media.DISPLAY_NAME, displayName)
+            put(MediaStore.Audio.Media.MIME_TYPE, "audio/mpeg")
+            put(
+                MediaStore.Audio.Media.RELATIVE_PATH,
+                Environment.DIRECTORY_MUSIC
+            )
+            put(MediaStore.Audio.Media.IS_PENDING, 1)
+        }
+
+        val uri = resolver.insert(
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+            values
+        ) ?: return null
+
+        resolver.openOutputStream(uri)?.use { out ->
+            sourceFile.inputStream().use { input ->
+                input.copyTo(out)
+            }
+        }
+
+        values.clear()
+        values.put(MediaStore.Audio.Media.IS_PENDING, 0)
+        resolver.update(uri, values, null, null)
+
+        return uri
+    }
+
 
 }
 
