@@ -11,6 +11,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.sharity.domain.model.Playlist
 import com.example.sharity.domain.model.Track
+import com.example.sharity.indexerManager
 
 @Composable
 fun ReusableTrackList(
@@ -41,106 +44,113 @@ fun ReusableTrackList(
     var showPlaylistDialog by remember { mutableStateOf(false) }
     var selectedTrackForPlaylist by remember { mutableStateOf<Track?>(null) }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(paddingValues), // Apply the padding here
-        contentPadding = PaddingValues(bottom = 16.dp)
+    PullToRefreshBox(
+        isRefreshing = false,
+        onRefresh = {
+            indexerManager.startIndex()
+        },
     ) {
-        // Modern Header
-        item {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp)
-            ) {
-                // Gradient icon
-                Box(
+        LazyColumn(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(paddingValues), // Apply the padding here
+            contentPadding = PaddingValues(bottom = 16.dp)
+        ) {
+            // Modern Header
+            item {
+                Column(
                     modifier = Modifier
-                        .size(120.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.primary,
-                                    MaterialTheme.colorScheme.tertiary
-                                )
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .padding(20.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.LibraryMusic,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(56.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Text(
-                    text = currentListName,
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "${trackList.size} ${if (trackList.size == 1) "song" else "songs"}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                // Search Bar
-                if (onSearchQueryChange != null) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = onSearchQueryChange,
-                        placeholder = { Text("Search songs...") },
-                        leadingIcon = {
-                            Icon(Icons.Default.Search, contentDescription = "Search")
-                        },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                    // Gradient icon
+                    Box(
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(
+                                Brush.linearGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primary,
+                                        MaterialTheme.colorScheme.tertiary
+                                    )
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LibraryMusic,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(56.dp)
                         )
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Text(
+                        text = currentListName,
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "${trackList.size} ${if (trackList.size == 1) "song" else "songs"}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    // Search Bar
+                    if (onSearchQueryChange != null) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = onSearchQueryChange,
+                            placeholder = { Text("Search songs...") },
+                            leadingIcon = {
+                                Icon(Icons.Default.Search, contentDescription = "Search")
+                            },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                            )
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                     )
                 }
+            }
 
-                Spacer(modifier = Modifier.height(16.dp))
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            // Track List
+            itemsIndexed(
+                items = trackList,
+                key = { _, track -> track.contentUri }
+            ) { index, track ->
+                val clickAction = if (isSelectionMode) {
+                    { onTrackSelect(track) }
+                } else {
+                    { onTrackClick(track) }
+                }
+
+                val isSelected = selectedTracks.contains(track)
+
+                TrackCard(
+                    uri = track.contentUri,
+                    title = track.title,
+                    artist = track.artist ?: "Unknown Artist",
+                    isSelected = isSelected,
+                    onClick = clickAction,
                 )
             }
-        }
-
-        // Track List
-        itemsIndexed(
-            items = trackList,
-            key = { _, track -> track.contentUri }
-        ) { index, track ->
-            val clickAction = if (isSelectionMode) {
-                { onTrackSelect(track) }
-            } else {
-                { onTrackClick(track) }
-            }
-
-            val isSelected = selectedTracks.contains(track)
-
-            TrackCard(
-                uri = track.contentUri,
-                title = track.title,
-                artist = track.artist ?: "Unknown Artist",
-                isSelected = isSelected,
-                onClick = clickAction,
-            )
         }
     }
 }
