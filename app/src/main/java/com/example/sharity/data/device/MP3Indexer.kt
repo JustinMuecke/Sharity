@@ -49,7 +49,6 @@ class MP3Indexer(
             val titleColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
             val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
             val yearColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR)
-            val pathColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.RELATIVE_PATH)
 
             Log.d(TAG, "Indexing results:")
             while (cursor.moveToNext()) {
@@ -60,14 +59,12 @@ class MP3Indexer(
                 val title = cursor.getString(titleColumn)
                 val artist = cursor.getString(artistColumn)
                 val year = cursor.getInt(yearColumn)
-                val path = cursor.getString(pathColumn)
 
                 Log.d(TAG, "ID: $id, URI: \"$uri\"")
                 Log.d(TAG, "Duration: ${duration}ms")
                 Log.d(TAG, "Title: \"$title\"")
                 Log.d(TAG, "Artist: \"$artist\"")
                 Log.d(TAG, "Year: $year")
-                Log.d(TAG, "Path: \"$path\"")
                 Log.d(TAG, "")
 
                 val track = Track(
