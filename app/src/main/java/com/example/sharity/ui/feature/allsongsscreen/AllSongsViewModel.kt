@@ -206,16 +206,22 @@ class AllSongsViewModel(
     }
 
 
+    // Add this to your AllSongsViewModel class:
+
+    // Add a new state to track the current playback context
+    private val _currentPlaybackContext = MutableStateFlow<List<Track>>(emptyList())
+
+    // Modify selectTrack to update the context:
     fun selectTrack(selectedTrack: Track) {
         val currentList = _tracks.value
+        _currentPlaybackContext.value = currentList // Store the context
 
-        // ⬅️ FIX: Use contentUri for the lookup
         val startIndex = currentList.indexOfFirst { it.contentUri == selectedTrack.contentUri }
 
         if (startIndex != -1) {
             val mediaItems = currentList.map { track ->
                 MediaItem.Builder()
-                    .setUri(track.contentUri) // ⬅️ THIS IS THE URI YOU NEED TO COMPARE LATER
+                    .setUri(track.contentUri)
                     .setMediaMetadata(
                         MediaMetadata.Builder()
                             .setTitle(track.title)
@@ -225,16 +231,88 @@ class AllSongsViewModel(
                     .build()
             }
 
-
             player.setMediaItems(mediaItems)
-
             player.seekTo(startIndex, 0)
             player.prepare()
             player.play()
 
-            // F. Update UI immediately
-            _currentTrack.value = selectedTrack // ⬅️ Save the unique URI        }
+            _currentTrack.value = selectedTrack
         }
+    }
+
+    // Modify selectTrackInContext to update the context:
+    fun selectTrackInContext(selectedTrack: Track, contextList: List<Track>) {
+        _currentPlaybackContext.value = contextList // Store the context
+
+        val startIndex = contextList.indexOfFirst { it.contentUri == selectedTrack.contentUri }
+
+        if (startIndex != -1) {
+            val mediaItems = contextList.map { track ->
+                MediaItem.Builder()
+                    .setUri(track.contentUri)
+                    .setMediaMetadata(
+                        MediaMetadata.Builder()
+                            .setTitle(track.title)
+                            .setArtist(track.artist ?: "Unknown")
+                            .build()
+                    )
+                    .build()
+            }
+
+            player.setMediaItems(mediaItems)
+            player.seekTo(startIndex, 0)
+            player.prepare()
+            player.play()
+
+            _currentTrack.value = selectedTrack
+        }
+    }
+
+    // Update updateNextTracksFromPlayer to use the context:
+    private fun updateNextTracksFromPlayer() {
+        val timeline = player.currentTimeline
+        val currentWindowIndex = player.currentMediaItemIndex
+
+        if (timeline.isEmpty || currentWindowIndex == C.INDEX_UNSET) {
+            _nextTracks.value = emptyList()
+            return
+        }
+
+        val futureTracks = mutableListOf<Track>()
+        val window = Timeline.Window()
+
+        // Use the current playback context instead of _tracks
+        val contextList = _currentPlaybackContext.value
+
+        var nextIndex = timeline.getNextWindowIndex(
+            currentWindowIndex,
+            player.repeatMode,
+            player.shuffleModeEnabled
+        )
+
+        while (nextIndex != C.INDEX_UNSET && nextIndex != currentWindowIndex) {
+            timeline.getWindow(nextIndex, window)
+            val mediaItem = window.mediaItem ?: break
+
+            val mediaUriString = mediaItem.localConfiguration?.uri.toString()
+
+            // Find the track in the current playback context
+            val track = contextList.find { it.contentUri == mediaUriString }
+
+            if (track != null) {
+                futureTracks.add(track)
+            }
+
+            nextIndex = timeline.getNextWindowIndex(
+                nextIndex,
+                player.repeatMode,
+                player.shuffleModeEnabled
+            )
+
+            if (futureTracks.size > timeline.windowCount) break
+        }
+
+        _nextTracks.value = futureTracks
     }
     fun togglePlayPause() {
         if (player.isPlaying) {
@@ -274,86 +352,6 @@ class AllSongsViewModel(
         }
     }
 
-    private fun updateNextTracksFromPlayer() {
-        val timeline = player.currentTimeline
-        val currentWindowIndex = player.currentMediaItemIndex
 
-        if (timeline.isEmpty || currentWindowIndex == C.INDEX_UNSET) {
-            _nextTracks.value = emptyList()
-            return
-        }
 
-        val futureTracks = mutableListOf<Track>()
-        val window = Timeline.Window()
-
-        // Start with the index immediately following the current one
-        var nextIndex = timeline.getNextWindowIndex(
-            currentWindowIndex,
-            player.repeatMode,
-            player.shuffleModeEnabled
-        )
-
-        // Loop through the next items in the playlist order
-        while (nextIndex != C.INDEX_UNSET && nextIndex != currentWindowIndex) {
-            timeline.getWindow(nextIndex, window)
-            val mediaItem = window.mediaItem ?: break
-
-            // ⬅️ FIX: Use localConfiguration?.uri.toString() for the original URI
-            val mediaUriString = mediaItem.localConfiguration?.uri.toString()
-
-            // Find the full 'Track' object that corresponds to this MediaItem/URI
-            val track = _tracks.value.find { it.contentUri == mediaUriString }
-
-            if (track != null) {
-                futureTracks.add(track)
-            }
-
-            // Get the next index in the playback sequence
-            nextIndex = timeline.getNextWindowIndex(
-                nextIndex,
-                player.repeatMode,
-                player.shuffleModeEnabled
-            )
-
-            // Safety break to prevent infinite loops in certain repeat modes if not handled by timeline
-            if (futureTracks.size > timeline.windowCount) break
-        }
-
-        _nextTracks.value = futureTracks
-    }
-    /**
-     * Starts playback of a specific track within a defined list context.
-     *
-     * @param selectedTrack The track to start playing.
-     * @param contextList The list of tracks (e.g., a Playlist) that defines the playback order.
-     */
-    fun selectTrackInContext(selectedTrack: Track, contextList: List<Track>) {
-        val startIndex = contextList.indexOfFirst { it.contentUri == selectedTrack.contentUri }
-
-        if (startIndex != -1) {
-            val mediaItems = contextList.map { track ->
-                // (MediaItem creation logic remains the same)
-                MediaItem.Builder()
-                    .setUri(track.contentUri)
-                    .setMediaMetadata(
-                        MediaMetadata.Builder()
-                            .setTitle(track.title)
-                            .setArtist(track.artist ?: "Unknown")
-                            .build()
-                    )
-                    .build()
-            }
-
-            player.setMediaItems(mediaItems)
-            player.seekTo(startIndex, 0)
-            player.prepare()
-            player.play()
-
-            // Update UI state with the current URI
-            _currentTrack.value = selectedTrack
-        }
-        // Update the master _tracks list if you want the skipNext/Prev logic to also use this context list
-        // _tracks.value = contextList // CAUTION: This would break the AllSongsView list and needs careful management.
-        // A better approach is to only update the MediaQueue and let the listener handle the rest.
-    }
 }
