@@ -24,16 +24,22 @@ interface UserInfoDao {
 
     @Query("""
             INSERT INTO userInfos(`key`, value) 
-            SELECT 'uuid', :uuid
+            SELECT 'uuid', :value
             WHERE NOT EXISTS (SELECT 1 FROM userInfos WHERE `key` = 'uuid')
          """)
-    fun createUuidIfEmpty(uuid: String)
+    fun createValueIfEmpty(value: String)
 
     @Query("""
             SELECT value
             FROM userInfos
-            WHERE `key` = 'uuid'
+            WHERE `key` = :value
             LIMIT 1
         """)
-    fun getUuid() : String
+    fun getValue(value: String) : String
+
+    @Query("""
+            INSERT OR REPLACE INTO userInfos (`key`, value)
+            VALUES (:key, :value)
+        """)
+    fun upsert(key: String, value: String)
 }

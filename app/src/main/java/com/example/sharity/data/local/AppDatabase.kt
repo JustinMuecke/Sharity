@@ -1,6 +1,8 @@
 package com.example.sharity.data.local
 
+import android.content.Context
 import androidx.room.Database
+import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.sharity.domain.model.Playlist
 import com.example.sharity.domain.model.Track
@@ -20,11 +22,31 @@ import com.example.sharity.domain.usecase.UserInfoDao
         Connection::class,
         UserInfo::class,
         ],
-    version = 11)
+    version = 12)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun trackDao(): TrackDao
     abstract fun playlistDao(): PlaylistDao
     abstract fun connectionDao(): ConnectionDao
     abstract fun userInfoDao(): UserInfoDao
+
+    companion object {
+
+        @Volatile
+        private var INSTANCE: AppDatabase? = null
+
+        fun getInstance(context: Context): AppDatabase {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: Room.databaseBuilder(
+                    context.applicationContext,
+                    AppDatabase::class.java,
+                    "sharity-database"
+                )
+                    .fallbackToDestructiveMigration(true)
+                    .build()
+                    .also { INSTANCE = it }
+            }
+        }
+    }
+
 }
 
